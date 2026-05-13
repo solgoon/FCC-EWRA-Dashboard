@@ -122,6 +122,318 @@ const OE_OPTIONS = [
   { value:4, label:'4 — Effective',         desc:'Consistent, evidence-backed execution; no material findings; staffing and tooling sufficient.' },
 ];
 
+const RU_SEEDS = {
+  'RC-01_P-01': {
+    f:[4.0,3.5,2.0,5.0], owner:'BSA Officer', status:'Assessed', date:'2026-04-01',
+    n:{
+      P:'High velocity, open-loop, irrevocable P2P with strong cash-equivalence; novelty elevated by in-feed context.',
+      C:'Mainstream retail majority but elevated synthetic-ID attempts in soft launch; pseudonymous handle culture.',
+      G:'US only at launch.',
+      Ch:'Non-face-to-face onboarding; in-feed DM → P2P in seconds; documented bot exposure on parent platform.',
+    },
+    c:[['CTRL-001',0.15,3,4],['CTRL-003',0.30,3,4],['CTRL-006',0.15,3,4],['CTRL-010',0.25,4,2],['CTRL-011',0.15,2,2]],
+    notes:'§5.7 worked example. Re-rated quarterly. Sponsor bank reviewed Q1 2026.',
+    upd:[
+      ['BSA Officer','Reviewed with sponsor bank counterpart; alignment confirmed for Q1.','2026-03-15T10:00:00'],
+      ['Fraud Lead','Mule typology detector (CTRL-010) showing strain — see ISS-001 for remediation plan.','2026-04-22T16:30:00'],
+    ],
+  },
+  'RC-02_P-01': {
+    f:[3.0,3.0,2.5,4.0], owner:'BSA Officer', status:'Assessed', date:'2026-03-28',
+    n:{
+      P:'Standard P2P rails; TF exposure primarily a function of customer/sanctions overlap rather than product novelty.',
+      C:'Same retail population as ML; small subset of customers map to FATF priority jurisdictions via geo signals.',
+      G:'US-only at launch but cross-border via PEP/RCA second-degree connections; small surface.',
+      Ch:'In-feed DM solicitation surface modeled in TM scenarios; bot exposure inherits from RC-01.',
+    },
+    c:[['CTRL-002',0.30,4,3],['CTRL-006',0.30,3,4],['CTRL-007',0.40,3,3]],
+  },
+  'RC-03_P-01': {
+    f:[3.0,3.0,3.0,4.0], owner:'OFAC Officer', status:'Assessed', date:'2026-04-08',
+    n:{
+      P:'Open-loop P2P with no counterparty restrictions; sanctions exposure tracks customer + geography.',
+      C:'PEP rate sub-target; small uptick in name-similarity hits since soft launch.',
+      G:'US-only but FATF-grey-list device signals observed at ~0.3% — heightened from baseline.',
+      Ch:'VPN/proxy heuristics flag ~1.4% of sessions; CTRL-004 blocks the high-confidence subset.',
+    },
+    c:[['CTRL-002',0.45,4,4],['CTRL-004',0.30,3,3],['CTRL-006',0.25,3,4]],
+    notes:'Hourly OFAC list refresh in progress (ACT-004). Sponsor bank monitoring weekly.',
+    upd:[
+      ['OFAC Officer','List refresh cadence reduced to hourly target; see ACT-004.','2026-04-25T09:15:00'],
+    ],
+  },
+  'RC-04_P-01': {
+    f:[4.0,4.0,2.0,5.0], owner:'Fraud Lead', status:'Assessed', date:'2026-04-05',
+    n:{
+      P:'Irrevocable P2P, no chargeback rail; high social-engineering ceiling.',
+      C:'Scam payout patterns concentrated in 25-44 demographic; synthetic-ID attempts elevated.',
+      G:'US-only.',
+      Ch:'In-feed DM → P2P creates the lowest-friction scam funnel observed in soft launch.',
+    },
+    c:[['CTRL-001',0.20,3,4],['CTRL-003',0.30,3,4],['CTRL-005',0.20,3,3],['CTRL-010',0.30,4,2]],
+    notes:'Highest priority residual on the program. Two open issues (ISS-001, ISS-007).',
+    upd:[
+      ['Fraud Lead','Pig-butchering case volume up 12% MoM; not isolated to mule cluster.','2026-04-10T11:00:00'],
+      ['BSA Analyst','Coordinating with T&S on social-graph signal sharing MOU.','2026-04-30T14:20:00'],
+    ],
+  },
+  'RC-05_P-01': {
+    f:[3.0,3.0,2.0,4.0], owner:'Fraud Lead', status:'Assessed', date:'2026-03-30',
+    n:{
+      P:'P2P speed disadvantages elders facing urgent-payment scams.',
+      C:'~6% of base flagged as >65 in onboarding data; modest but not negligible.',
+      G:'US-only.',
+      Ch:'DM-based grandparent and tech-support scams observed in TM samples.',
+    },
+    c:[['CTRL-003',0.35,3,4],['CTRL-013',0.45,3,3],['CTRL-018',0.20,3,3]],
+  },
+  'RC-06_P-01': {
+    f:[3.0,4.0,2.5,5.0], owner:'BSA Officer', status:'Assessed', date:'2026-04-12',
+    n:{
+      P:'P2P used as payout rail for exploitative content monetized off-platform.',
+      C:'Creator-adjacent segments overrepresented; T&S signal correlations under review.',
+      G:'US-only but content originates globally.',
+      Ch:'Parent platform Trust & Safety telemetry intermittent — CTRL-011 ramping; high amplification risk.',
+    },
+    c:[['CTRL-011',0.55,2,2],['CTRL-012',0.30,3,3],['CTRL-007',0.15,3,3]],
+    notes:'Owner-shared with parent T&S team. Critical to maintain MOU cadence.',
+    upd:[
+      ['BSA Officer','T&S signal latency continues to be the blocker (ISS-003).','2026-04-30T17:00:00'],
+    ],
+  },
+  'RC-07_P-01': {
+    f:[3.0,3.0,2.0,3.0], owner:'Consumer Compliance Lead', status:'In Review', date:'2026-05-04',
+    n:{
+      P:'P2P irrevocability and Reg E error-resolution intersect at scam disputes.',
+      C:'Complaint mix dominated by Reg E unauthorized claims; modest UDAAP volume.',
+      G:'US-only.',
+      Ch:'In-app dispute flow under redesign; provisional credit timers consistent with Reg E.',
+    },
+    c:[['CTRL-008',0.35,3,3],['CTRL-009',0.35,3,3],['CTRL-018',0.30,3,3]],
+  },
+  'RC-08_P-01': {
+    f:[4.0,4.0,2.0,5.0], owner:'CISO', status:'Assessed', date:'2026-04-18',
+    n:{
+      P:'P2P credential value drives credential stuffing pressure.',
+      C:'Parent-platform credential overlap surfaces in 4–6% of failed logins.',
+      G:'US-only.',
+      Ch:'Mobile + web with no MFA-by-default at signup; step-up only on risky sessions.',
+    },
+    c:[['CTRL-001',0.30,3,4],['CTRL-004',0.30,3,3],['CTRL-005',0.40,3,3]],
+    notes:'Behavioral biometrics retrain pending (ACT-011).',
+    upd:[
+      ['CISO','SIM-swap attempt volume stable; biometrics model drift the larger concern (ISS-011).','2026-04-26T08:45:00'],
+    ],
+  },
+  'RC-10_P-01': {
+    f:[3.0,2.0,2.0,3.0], owner:'TPRM Lead', status:'Assessed', date:'2026-03-25',
+    n:{
+      P:'Standard fintech-bank program-manager structure.',
+      C:'Customer base entirely under sponsor bank deposit insurance perimeter.',
+      G:'Sponsor bank US-domiciled; subprocessors limited to US/EU.',
+      Ch:'Sponsor bank monthly ops review on cadence; one finding open (ISS-008).',
+    },
+    c:[['CTRL-016',0.30,4,3],['CTRL-017',0.50,3,4],['CTRL-019',0.20,3,3]],
+  },
+
+  'RC-01_P-02': {
+    f:[3.0,3.0,2.0,3.0], owner:'BSA Officer', status:'Assessed', date:'2026-03-22',
+    n:{
+      P:'Visa debit with merchant-network counterparty; ML exposure lower than P2P but non-trivial cash-equivalence.',
+      C:'Mainstream debit-card user base; PEP/RCA at baseline.',
+      G:'US-only acceptance at launch; some international MCC exposure.',
+      Ch:'Card-present and card-not-present surfaces both covered by TM.',
+    },
+    c:[['CTRL-001',0.25,3,4],['CTRL-003',0.40,3,4],['CTRL-006',0.20,3,4],['CTRL-007',0.15,3,3]],
+    notes:'Lower priority than P2P/DD for ML scrutiny.',
+    upd:[
+      ['BSA Officer','Q1 review uneventful; no scenario changes proposed.','2026-04-01T13:00:00'],
+    ],
+  },
+  'RC-03_P-02': {
+    f:[3.0,3.0,2.5,3.0], owner:'OFAC Officer', status:'Assessed', date:'2026-04-02',
+    n:{
+      P:'Visa rails carry counterparty screening through network plus K-Money\'s own checks.',
+      C:'No PEP/RCA debit-only segment of concern; standard retail.',
+      G:'US-only; international MCC requests blocked when issuer-country is sanctioned.',
+      Ch:'Standard card auth + network rules; no in-feed surface.',
+    },
+    c:[['CTRL-002',0.50,4,4],['CTRL-004',0.30,3,3],['CTRL-006',0.20,3,4]],
+  },
+  'RC-04_P-02': {
+    f:[4.0,3.0,2.0,4.0], owner:'Fraud Lead', status:'Assessed', date:'2026-04-15',
+    n:{
+      P:'Card-not-present fraud and BIN-attack pressure typical for new fintech cards.',
+      C:'No high-risk merchant segments; standard retail use.',
+      G:'US-only.',
+      Ch:'CNP transactions are the primary risk surface; chargeback rail provides recovery.',
+    },
+    c:[['CTRL-001',0.20,3,4],['CTRL-003',0.30,3,4],['CTRL-005',0.30,3,3],['CTRL-010',0.20,3,3]],
+    notes:'Mid-March BIN-attack spike under review (ISS-009).',
+    upd:[
+      ['Fraud Lead','Containment runbook (ACT-009) ready for tabletop next Thursday.','2026-04-28T10:30:00'],
+    ],
+  },
+  'RC-07_P-02': {
+    f:[3.0,3.0,2.0,3.0], owner:'Consumer Compliance Lead', status:'Assessed', date:'2026-03-30',
+    n:{
+      P:'Card-fee schedule simple; no junk-fee pattern flagged.',
+      C:'Complaint volume stable; Reg E mix dominant.',
+      G:'US-only.',
+      Ch:'In-app dispute flow + call center; provisional credit SLA met >99% in Q1.',
+    },
+    c:[['CTRL-008',0.50,3,3],['CTRL-009',0.25,3,4],['CTRL-018',0.25,3,3]],
+  },
+  'RC-08_P-02': {
+    f:[3.0,3.0,2.0,4.0], owner:'CISO', status:'Assessed', date:'2026-04-09',
+    n:{
+      P:'Card credentials targeted by SIM-swap-adjacent ATO chains.',
+      C:'Same parent-platform-credential overlap as RC-08 × P-01.',
+      G:'US-only.',
+      Ch:'Wallet/Apple Pay enrollment is the primary ATO vector; CTRL-005 step-up applied.',
+    },
+    c:[['CTRL-001',0.20,3,4],['CTRL-004',0.30,3,3],['CTRL-005',0.50,3,3]],
+  },
+  'RC-10_P-02': {
+    f:[3.0,2.0,2.0,3.0], owner:'TPRM Lead', status:'Assessed', date:'2026-03-25',
+    n:{
+      P:'Card BIN sponsor + issuer-processor chain adds parties; well-documented.',
+      C:'Same as P-01.',
+      G:'Same.',
+      Ch:'Quarterly joint risk review covers card-specific topics.',
+    },
+    c:[['CTRL-016',0.30,4,3],['CTRL-017',0.50,3,4],['CTRL-019',0.20,3,3]],
+  },
+
+  'RC-01_P-03': {
+    f:[3.0,3.0,2.0,3.0], owner:'BSA Officer', status:'Assessed', date:'2026-04-05',
+    n:{
+      P:'Direct deposit gives a stable funding rail; ML risk via staged-employment / funnel-account patterns.',
+      C:'Salary-receiving segment is lower-risk; subset of self-employed inflows under scrutiny.',
+      G:'US-only.',
+      Ch:'ACH operator + originator chain visible; TM rules cover funnel patterns.',
+    },
+    c:[['CTRL-001',0.25,3,4],['CTRL-003',0.30,3,4],['CTRL-006',0.25,3,4],['CTRL-007',0.20,3,3]],
+    notes:'Roadmap product — pre-launch addendum approved.',
+    upd:[
+      ['BSA Officer','DD launch dependency on EDD backlog clearance (ISS-008).','2026-04-22T09:00:00'],
+    ],
+  },
+  'RC-03_P-03': {
+    f:[3.0,3.0,2.0,2.0], owner:'OFAC Officer', status:'Assessed', date:'2026-03-31',
+    n:{
+      P:'ACH originators screened on file; sanctions-evasion risk via small employers low.',
+      C:'No PEP concentration.',
+      G:'US-only originators.',
+      Ch:'Closed-loop bank-to-bank channel; minimal abuse surface.',
+    },
+    c:[['CTRL-002',0.50,4,4],['CTRL-004',0.30,3,3],['CTRL-006',0.20,3,4]],
+  },
+  'RC-04_P-03': {
+    f:[4.0,4.0,2.0,3.0], owner:'Fraud Lead', status:'Assessed', date:'2026-04-20',
+    n:{
+      P:'Payroll redirection + tax refund redirection are the headline DD fraud typologies.',
+      C:'Account-takeover-driven changes to DD instructions concentrated post-tax-season.',
+      G:'US-only.',
+      Ch:'In-app DD instruction change is the controlled surface; step-up applied.',
+    },
+    c:[['CTRL-001',0.25,3,4],['CTRL-003',0.30,3,4],['CTRL-005',0.25,3,3],['CTRL-010',0.20,3,3]],
+    notes:'DD launch gating: step-up coverage gap (ISS-007) must close before public release.',
+    upd:[
+      ['Fraud Lead','Tax-season postmortem rolled into pre-launch readiness pack.','2026-05-02T15:45:00'],
+    ],
+  },
+  'RC-07_P-03': {
+    f:[3.0,3.0,2.0,3.0], owner:'Consumer Compliance Lead', status:'In Review', date:'2026-05-06',
+    n:{
+      P:'Reg E provisional-credit timers are the primary compliance surface for DD-error claims.',
+      C:'Standard retail.',
+      G:'US-only.',
+      Ch:'CTRL-008 currently operating sub-target due to volume — issue open (ISS-006).',
+    },
+    c:[['CTRL-008',0.45,3,2],['CTRL-009',0.25,3,4],['CTRL-018',0.30,3,3]],
+    notes:'CE rated Needs Improvement until backlog clears.',
+    upd:[
+      ['Consumer Compliance Lead','Two new analysts join 5/19; backlog burndown plan in ACT-006.','2026-05-08T11:15:00'],
+    ],
+  },
+  'RC-08_P-03': {
+    f:[4.0,3.0,2.0,3.0], owner:'CISO', status:'Assessed', date:'2026-04-14',
+    n:{
+      P:'BEC attempts targeting DD instruction changes are the dominant cyber risk for this product.',
+      C:'Customer susceptibility average; phishing-aware messaging at change time.',
+      G:'US-only.',
+      Ch:'Email-channel BEC primarily; in-app + biometrics provide channel separation.',
+    },
+    c:[['CTRL-001',0.30,3,4],['CTRL-004',0.30,3,3],['CTRL-005',0.40,3,3]],
+    notes:'See ISS-007 for legacy-iOS step-up gap.',
+    upd:[
+      ['CISO','Legacy iOS deprecation timeline accelerated; ACT-007 on track.','2026-04-29T13:20:00'],
+    ],
+  },
+  'RC-10_P-03': {
+    f:[3.0,2.0,2.0,3.0], owner:'TPRM Lead', status:'Assessed', date:'2026-03-29',
+    n:{
+      P:'ACH operator + sponsor bank chain; documented and reviewed.',
+      C:'Customer base unchanged from other products.',
+      G:'US-only.',
+      Ch:'Same quarterly cadence as P-02.',
+    },
+    c:[['CTRL-016',0.30,4,3],['CTRL-017',0.50,3,4],['CTRL-019',0.20,3,3]],
+  },
+
+  'RC-07_P-04': {
+    f:[4.0,3.0,2.0,3.0], owner:'CCO', status:'In Review', date:'2026-05-10',
+    n:{
+      P:'High-yield interest is the headline UDAAP exposure: Reg DD + FDIC-claim sensitivity.',
+      C:'Mainstream retail attracted by yield rate; misperception risk on insurance status.',
+      G:'US-only.',
+      Ch:'In-app marketing copy is the primary disclosure surface; gate is CTRL-009.',
+    },
+    c:[['CTRL-009',0.55,4,3],['CTRL-008',0.20,3,3],['CTRL-018',0.25,3,3]],
+    notes:'Senate Banking Committee letter referenced explicitly. Top-of-mind for the CCO.',
+    upd:[
+      ['CCO','Marketing copy v3 in sponsor-bank legal review; targeting 5/15 sign-off.','2026-05-04T16:00:00'],
+      ['Consumer Compliance Lead','Reg DD APY calc validated end-to-end against latest TISA guidance.','2026-05-08T10:30:00'],
+    ],
+  },
+  'RC-10_P-04': {
+    f:[3.0,2.0,2.0,3.0], owner:'TPRM Lead', status:'Assessed', date:'2026-04-08',
+    n:{
+      P:'Deposit-side product depends entirely on sponsor bank balance sheet; vendor concentration limited.',
+      C:'No segment-specific exposure beyond standard.',
+      G:'US-only.',
+      Ch:'Sponsor bank financial-health attestation quarterly.',
+    },
+    c:[['CTRL-016',0.30,4,3],['CTRL-017',0.50,3,4],['CTRL-019',0.20,3,3]],
+  },
+
+  'RC-04_P-05': {
+    f:[3.0,3.0,2.0,3.0], owner:'Fraud Lead', status:'Draft', date:'2026-05-09',
+    n:{
+      P:'Cashback rewards create a bonus-abuse and synthetic-account-farm incentive.',
+      C:'New-account cohorts disproportionately exhibit bonus-stacking patterns.',
+      G:'US-only.',
+      Ch:'In-app referral surface is the primary abuse vector.',
+    },
+    c:[['CTRL-003',0.40,3,3],['CTRL-005',0.30,3,3],['CTRL-010',0.30,3,3]],
+    notes:'Pre-launch draft. Promo-engine team owns abuse-rule design.',
+    upd:[
+      ['Fraud Lead','Abuse-rule v1 baseline FPR ~6%, targeting <3% before launch.','2026-05-07T14:00:00'],
+    ],
+  },
+  'RC-07_P-05': {
+    f:[3.0,3.0,2.0,3.0], owner:'UDAAP Specialist', status:'Draft', date:'2026-05-09',
+    n:{
+      P:'Cashback terms disclosure and earn-cap clarity are the UDAAP surface.',
+      C:'Mainstream retail.',
+      G:'US-only.',
+      Ch:'In-app T&Cs surface; legal review pending.',
+    },
+    c:[['CTRL-008',0.30,3,3],['CTRL-009',0.40,3,4],['CTRL-018',0.30,3,3]],
+  },
+};
+
 function makeDefaultRiskUnits() {
   const units = [];
   let idx = 0;
@@ -129,29 +441,31 @@ function makeDefaultRiskUnits() {
     for (const cat of cats) {
       idx++;
       const id = `RU-${String(idx).padStart(3,'0')}`;
-      const isExample = pid === 'P-01' && cat === 'RC-01';
+      const key = `${cat}_${pid}`;
+      const seed = RU_SEEDS[key];
+      if (!seed) {
+        units.push({
+          id, riskCategoryId: cat, productId: pid,
+          owner:'Unassigned', status:'Draft', notes:'',
+          lastUpdated: todayISO(),
+          factorScores:{ P:3, C:3, G:2, Ch:3 },
+          factorNarratives:{ P:'', C:'', G:'', Ch:'' },
+          linkedControls:[], updates:[],
+        });
+        continue;
+      }
       units.push({
-        id,
-        riskCategoryId: cat,
-        productId: pid,
-        owner: isExample ? 'BSA Officer' : '',
-        status: isExample ? 'Assessed' : 'Draft',
-        notes: '',
-        lastUpdated: isExample ? '2026-04-01' : new Date().toISOString().slice(0,10),
-        factorScores: isExample ? { P:4.0, C:3.5, G:2.0, Ch:5.0 } : { P:3, C:3, G:2, Ch:3 },
-        factorNarratives: isExample ? {
-          P:  'High velocity, open-loop, irrevocable P2P with strong cash-equivalence; novelty elevated by in-feed context.',
-          C:  'Mainstream retail majority but elevated synthetic-ID attempts in soft launch; pseudonymous handle culture.',
-          G:  'US only at launch.',
-          Ch: 'Non-face-to-face onboarding; in-feed DM → P2P in seconds; documented bot exposure on parent platform.',
-        } : { P:'', C:'', G:'', Ch:'' },
-        linkedControls: isExample ? [
-          { controlId:'CTRL-001', mitigationWeight:0.15, DE:3, OE:4 },
-          { controlId:'CTRL-003', mitigationWeight:0.30, DE:3, OE:4 },
-          { controlId:'CTRL-006', mitigationWeight:0.15, DE:3, OE:4 },
-          { controlId:'CTRL-010', mitigationWeight:0.25, DE:4, OE:2 },
-          { controlId:'CTRL-011', mitigationWeight:0.15, DE:2, OE:2 },
-        ] : [],
+        id, riskCategoryId: cat, productId: pid,
+        owner: seed.owner, status: seed.status, notes: seed.notes || '',
+        lastUpdated: seed.date,
+        factorScores:{ P:seed.f[0], C:seed.f[1], G:seed.f[2], Ch:seed.f[3] },
+        factorNarratives: seed.n,
+        linkedControls: (seed.c || []).map(([cid, w, de, oe]) => ({
+          controlId: cid, mitigationWeight: w, DE: de, OE: oe,
+        })),
+        updates: (seed.upd || []).map(([author, text, date], i) => ({
+          id:`upd-${id}-${i+1}`, author, text, date,
+        })),
       });
     }
   }
@@ -244,7 +558,7 @@ const CE_BAND_CLASS = {
   'Satisfactory':'c-sat', 'Strong':'c-strong',
 };
 
-const STORAGE_KEY = 'kmoney-ewra-v2';
+const STORAGE_KEY = 'kmoney-ewra-v3';
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -332,9 +646,10 @@ function SEED_ISSUES() {
       severity:'High', type:'Finding', source:'Self-identified', status:'In Progress',
       owner:'Fraud Lead', team:'BSA/AML',
       identifiedDate:'2026-04-22', dueDate:'2026-05-25',
-      linkedRiskUnits:['RU-001'], linkedControls:['CTRL-010'],
+      linkedRiskUnits:['RU-001','RU-004'], linkedControls:['CTRL-010'],
       notes:'', updates:[
         { id:'upd-1', author:'BSA Officer', text:'Engineering scoped retune; ETA ~2 weeks.', date:'2026-04-28T15:10:00' },
+        { id:'upd-2', author:'Fraud Lead', text:'Tabletop walkthrough completed; runbook v2 ready for QA.', date:'2026-05-05T11:20:00' },
       ],
     },
     {
@@ -344,17 +659,119 @@ function SEED_ISSUES() {
       severity:'Critical', type:'Finding', source:'Regulatory', status:'Open',
       owner:'CCO', team:'Compliance',
       identifiedDate:'2026-04-18', dueDate:'2026-05-10',
-      linkedRiskUnits:[], linkedControls:['CTRL-009'],
-      notes:'', updates:[],
+      linkedRiskUnits:['RU-022'], linkedControls:['CTRL-009'],
+      notes:'Pre-launch gating issue for the 6% APY rollout.', updates:[],
     },
     {
       id:'ISS-003',
       title:'Platform-integrity feed ingestion gap',
       description:'CTRL-011 ramping with intermittent dropped events from parent platform; design effective but operating sub-target.',
       severity:'Medium', type:'Observation', source:'Self-identified', status:'Open',
-      owner:'Eng Lead', team:'Engineering',
+      owner:'Platform Engineering Lead', team:'Engineering',
       identifiedDate:'2026-04-30', dueDate:'2026-06-15',
-      linkedRiskUnits:['RU-001'], linkedControls:['CTRL-011'],
+      linkedRiskUnits:['RU-001','RU-006'], linkedControls:['CTRL-011'],
+      notes:'', updates:[],
+    },
+    {
+      id:'ISS-004',
+      title:'OFAC SDN list synchronization delay',
+      description:'Vendor list-refresh cadence drifted from hourly to ~6-hour windows during w/c 2026-04-12. No true-hit miss confirmed, but exposure window widened.',
+      severity:'High', type:'Finding', source:'Audit', status:'In Progress',
+      owner:'OFAC Officer', team:'BSA/AML',
+      identifiedDate:'2026-04-20', dueDate:'2026-05-08',
+      linkedRiskUnits:['RU-003','RU-011','RU-017'], linkedControls:['CTRL-002'],
+      notes:'Sponsor bank notified within 24h per escalation policy.', updates:[
+        { id:'upd-1', author:'OFAC Officer', text:'Vendor SLA breach acknowledged; alternate list-source PoC opened in parallel.', date:'2026-04-24T08:30:00' },
+        { id:'upd-2', author:'CCO', text:'Quarterly Board pack to reference this finding and ACT-004 status.', date:'2026-05-02T17:00:00' },
+      ],
+    },
+    {
+      id:'ISS-005',
+      title:'CIP non-doc verification failure rate elevated for synthetic ID cohort',
+      description:'CIP failure rate for synthetic-ID-flagged applicants is 1.1% vs <0.5% target — non-documentary verification not catching device-farm clusters.',
+      severity:'High', type:'Finding', source:'Self-identified', status:'Open',
+      owner:'Onboarding Risk Lead', team:'1LoD',
+      identifiedDate:'2026-05-01', dueDate:'2026-06-30',
+      linkedRiskUnits:['RU-001','RU-004','RU-018'], linkedControls:['CTRL-001'],
+      notes:'New vendor signals being scoped for integration.', updates:[
+        { id:'upd-1', author:'Onboarding Risk Lead', text:'Vendor shortlist (3 providers) returns Friday; PoC scoping next week.', date:'2026-05-06T14:00:00' },
+      ],
+    },
+    {
+      id:'ISS-006',
+      title:'Reg E provisional-credit SLA breach in Q1',
+      description:'CTRL-008 provisional-credit SLA at 96.4% for Q1 vs 99% target. Two cases breached statutory 10-day window.',
+      severity:'High', type:'Finding', source:'Self-identified', status:'In Progress',
+      owner:'Consumer Compliance Lead', team:'Compliance',
+      identifiedDate:'2026-04-08', dueDate:'2026-05-20',
+      linkedRiskUnits:['RU-019'], linkedControls:['CTRL-008'],
+      notes:'Root cause: claim-volume spike post-tax-season + analyst capacity.', updates:[
+        { id:'upd-1', author:'Consumer Compliance Lead', text:'Two new analysts join 5/19; backlog burn-down model in ACT-006.', date:'2026-05-03T10:45:00' },
+      ],
+    },
+    {
+      id:'ISS-007',
+      title:'Step-up auth coverage gap on legacy iOS versions',
+      description:'CTRL-005 step-up flows fail silently on iOS <16.x; affected fleet ~3.2% of MAU. ATO risk inflated for that cohort.',
+      severity:'Medium', type:'Finding', source:'Self-identified', status:'Open',
+      owner:'CISO', team:'Engineering',
+      identifiedDate:'2026-04-25', dueDate:'2026-06-10',
+      linkedRiskUnits:['RU-008','RU-018','RU-020'], linkedControls:['CTRL-005'],
+      notes:'iOS legacy deprecation timeline being accelerated.', updates:[],
+    },
+    {
+      id:'ISS-008',
+      title:'Sponsor-bank Q1 finding: EDD case backlog',
+      description:'Sponsor bank Q1 joint review flagged 9 EDD cases open >60 days vs 0-tolerance target. CTRL-006 design effective but volume outpacing capacity.',
+      severity:'High', type:'Finding', source:'Sponsor Bank', status:'In Progress',
+      owner:'BSA Officer', team:'BSA/AML',
+      identifiedDate:'2026-04-02', dueDate:'2026-04-30',
+      linkedRiskUnits:['RU-009'], linkedControls:['CTRL-006','CTRL-017'],
+      notes:'Sponsor bank Risk Committee tracking weekly.', updates:[
+        { id:'upd-1', author:'BSA Officer', text:'Burndown plan ACT-008 approved; backlog 9 → 4 as of 4/29.', date:'2026-04-29T15:00:00' },
+        { id:'upd-2', author:'CCO', text:'Sponsor bank acknowledged trajectory; next checkpoint 5/13.', date:'2026-05-06T09:00:00' },
+      ],
+    },
+    {
+      id:'ISS-009',
+      title:'Card BIN-attack spike — mid-March',
+      description:'Mid-March observed 4.2× baseline CNP fraud-attempt volume against the BIN. CTRL-003 caught >98% but tail caused $42k loss.',
+      severity:'Medium', type:'Incident', source:'Self-identified', status:'In Progress',
+      owner:'Fraud Operations Manager', team:'Fraud Ops',
+      identifiedDate:'2026-03-19', dueDate:'2026-05-15',
+      linkedRiskUnits:['RU-012'], linkedControls:['CTRL-003'],
+      notes:'Postmortem complete; tabletop scheduled 5/15.', updates:[
+        { id:'upd-1', author:'Fraud Operations Manager', text:'Card-network BIN-attack rules tuned; tabletop runbook drafted (ACT-009).', date:'2026-04-08T13:30:00' },
+      ],
+    },
+    {
+      id:'ISS-010',
+      title:'Annual independent BSA/AML audit deferred Q3 → Q4',
+      description:'Independent audit firm engagement deferred from Q3 to Q4 due to scope expansion. Formal communication to sponsor bank required.',
+      severity:'Low', type:'Observation', source:'Self-identified', status:'Open',
+      owner:'CCO', team:'Compliance',
+      identifiedDate:'2026-05-01', dueDate:'2026-09-30',
+      linkedRiskUnits:['RU-009'], linkedControls:['CTRL-016'],
+      notes:'Risk Committee informed at April meeting.', updates:[],
+    },
+    {
+      id:'ISS-011',
+      title:'Behavioral-biometrics model drift on new device fleet',
+      description:'CTRL-005 model accuracy dropped 3.4 pts after Apr OS release; false-step-up rate rose accordingly.',
+      severity:'Medium', type:'Observation', source:'Self-identified', status:'Open',
+      owner:'CISO', team:'Engineering',
+      identifiedDate:'2026-05-02', dueDate:'2026-06-05',
+      linkedRiskUnits:['RU-008'], linkedControls:['CTRL-005'],
+      notes:'', updates:[],
+    },
+    {
+      id:'ISS-012',
+      title:'Elder typology rule hit-rate above tolerance',
+      description:'CTRL-013 elder-indicator alerts up 60% in April; high noise rate suggests threshold needs review.',
+      severity:'Low', type:'Observation', source:'Self-identified', status:'Open',
+      owner:'Fraud Lead', team:'Fraud Ops',
+      identifiedDate:'2026-05-04', dueDate:'2026-05-22',
+      linkedRiskUnits:['RU-005'], linkedControls:['CTRL-013'],
       notes:'', updates:[],
     },
   ];
@@ -368,9 +785,10 @@ function SEED_ACTIONS() {
       status:'In Progress - Execution',
       owner:'Fraud Engineering Manager', team:'Engineering',
       dueDate:'2026-05-20', linkedIssueId:'ISS-001',
-      linkedRiskUnitIds:['RU-001'],
+      linkedRiskUnitIds:['RU-001','RU-004'],
       notes:'', updates:[
         { id:'upd-1', author:'Fraud Lead', text:'Test set assembled; tuning underway.', date:'2026-05-02T11:30:00' },
+        { id:'upd-2', author:'Fraud Engineering Manager', text:'v2 model FPR down to 21% on holdout; QA next.', date:'2026-05-08T16:00:00' },
       ],
       createdDate:'2026-04-23',
     },
@@ -381,7 +799,7 @@ function SEED_ACTIONS() {
       status:'In Progress - Planning',
       owner:'Marketing Lead', team:'Marketing',
       dueDate:'2026-05-08', linkedIssueId:'ISS-002',
-      linkedRiskUnitIds:[], notes:'', updates:[],
+      linkedRiskUnitIds:['RU-022'], notes:'', updates:[],
       createdDate:'2026-04-19',
     },
     {
@@ -389,10 +807,120 @@ function SEED_ACTIONS() {
       title:'Telemetry retry + DLQ for parent integrity feed',
       description:'Add retry logic + dead-letter queue for the integrity ingestion pipeline; alert on backlog > 5 min.',
       status:'Not Started',
-      owner:'Platform Engineering', team:'Engineering',
+      owner:'Platform Engineering Lead', team:'Engineering',
       dueDate:'2026-06-12', linkedIssueId:'ISS-003',
-      linkedRiskUnitIds:['RU-001'], notes:'', updates:[],
+      linkedRiskUnitIds:['RU-001','RU-006'], notes:'', updates:[],
       createdDate:'2026-05-01',
+    },
+    {
+      id:'ACT-004',
+      title:'Migrate OFAC list refresh to hourly cron + parallel source',
+      description:'Reduce refresh window from 6h to ≤1h; stand up alternate list-source ingestion for redundancy.',
+      status:'In Progress - Execution',
+      owner:'OFAC Officer', team:'BSA/AML',
+      dueDate:'2026-05-15', linkedIssueId:'ISS-004',
+      linkedRiskUnitIds:['RU-003','RU-011','RU-017'],
+      notes:'', updates:[
+        { id:'upd-1', author:'OFAC Officer', text:'Hourly cron live in staging; production cutover 5/12.', date:'2026-05-04T09:30:00' },
+        { id:'upd-2', author:'Engineering Lead', text:'Alternate source contract signed; data feed in QA.', date:'2026-05-09T14:15:00' },
+      ],
+      createdDate:'2026-04-21',
+    },
+    {
+      id:'ACT-005',
+      title:'Integrate two new synthetic-ID vendor signals into CIP non-doc verification',
+      description:'PoC + production integration for two device-graph signals to close synthetic-ID gap.',
+      status:'In Progress - Planning',
+      owner:'Onboarding Risk Lead', team:'1LoD',
+      dueDate:'2026-06-20', linkedIssueId:'ISS-005',
+      linkedRiskUnitIds:['RU-001','RU-004','RU-018'],
+      notes:'Vendor PoC scoping in progress.', updates:[
+        { id:'upd-1', author:'Onboarding Risk Lead', text:'PoC SOW finalized; data exchange next week.', date:'2026-05-07T11:00:00' },
+      ],
+      createdDate:'2026-05-02',
+    },
+    {
+      id:'ACT-006',
+      title:'Reg E claims-queue capacity expansion + workflow tuning',
+      description:'Hire 2 analysts, redirect 1 lead from disputes; tune CTRL-008 timer thresholds.',
+      status:'In Progress - Planning',
+      owner:'Consumer Compliance Lead', team:'Compliance',
+      dueDate:'2026-05-30', linkedIssueId:'ISS-006',
+      linkedRiskUnitIds:['RU-019'],
+      notes:'', updates:[
+        { id:'upd-1', author:'Consumer Compliance Lead', text:'Offers extended to both candidates; start date 5/19.', date:'2026-05-05T12:00:00' },
+      ],
+      createdDate:'2026-04-10',
+    },
+    {
+      id:'ACT-007',
+      title:'Roll out step-up auth to legacy iOS via fallback web flow',
+      description:'Provide web-based step-up for iOS <16 fleet until app deprecation is enforced.',
+      status:'In Progress - Execution',
+      owner:'Mobile Engineering Lead', team:'Engineering',
+      dueDate:'2026-06-01', linkedIssueId:'ISS-007',
+      linkedRiskUnitIds:['RU-008','RU-018','RU-020'],
+      notes:'', updates:[],
+      createdDate:'2026-04-26',
+    },
+    {
+      id:'ACT-008',
+      title:'EDD case-backlog burndown plan',
+      description:'Burn EDD backlog from 9 → 0 by 5/25; daily standup with sponsor bank counterpart.',
+      status:'In Progress - Planning',
+      owner:'BSA Analyst Lead', team:'BSA/AML',
+      dueDate:'2026-05-25', linkedIssueId:'ISS-008',
+      linkedRiskUnitIds:['RU-009'],
+      notes:'', updates:[
+        { id:'upd-1', author:'BSA Analyst Lead', text:'Backlog at 4 cases as of 5/05; on track for 5/25 zero.', date:'2026-05-06T10:30:00' },
+      ],
+      createdDate:'2026-04-04',
+    },
+    {
+      id:'ACT-009',
+      title:'BIN-attack containment runbook + tabletop',
+      description:'Document detect → throttle → block flow for BIN attacks; run cross-team tabletop.',
+      status:'In Progress - Execution',
+      owner:'Fraud Operations Manager', team:'Fraud Ops',
+      dueDate:'2026-05-15', linkedIssueId:'ISS-009',
+      linkedRiskUnitIds:['RU-012'],
+      notes:'Tabletop scheduled 5/15 with card-network + sponsor bank Ops.', updates:[
+        { id:'upd-1', author:'Fraud Operations Manager', text:'Runbook v1 distributed; tabletop scenarios approved.', date:'2026-05-08T15:30:00' },
+      ],
+      createdDate:'2026-04-09',
+    },
+    {
+      id:'ACT-010',
+      title:'Q4 independent BSA/AML audit RFP',
+      description:'Issue RFP to three qualified firms; selection by end of Q3 for Q4 fieldwork.',
+      status:'Not Started',
+      owner:'CCO', team:'Compliance',
+      dueDate:'2026-08-01', linkedIssueId:'ISS-010',
+      linkedRiskUnitIds:['RU-009'],
+      notes:'', updates:[],
+      createdDate:'2026-05-04',
+    },
+    {
+      id:'ACT-011',
+      title:'Retrain behavioral-biometrics model on Mar-Apr 2026 data',
+      description:'Pull recent device-population sample; retrain + canary deploy.',
+      status:'Not Started',
+      owner:'CISO', team:'Engineering',
+      dueDate:'2026-06-15', linkedIssueId:'ISS-011',
+      linkedRiskUnitIds:['RU-008'],
+      notes:'', updates:[],
+      createdDate:'2026-05-03',
+    },
+    {
+      id:'ACT-012',
+      title:'Elder typology threshold review and tuning',
+      description:'Recalibrate CTRL-013 alert thresholds against Q1 case data; reduce noise.',
+      status:'In Progress - Planning',
+      owner:'Fraud Lead', team:'Fraud Ops',
+      dueDate:'2026-06-20', linkedIssueId:'ISS-012',
+      linkedRiskUnitIds:['RU-005'],
+      notes:'', updates:[],
+      createdDate:'2026-05-05',
     },
   ];
 }
@@ -665,7 +1193,6 @@ export default function App() {
   const navTabs = [
     { key:'dashboard', label:'Dashboard' },
     { key:'register',  label:'Register' },
-    { key:'heatmap',   label:'Heat Map' },
     { key:'controls',  label:'Controls' },
     { key:'issues',    label:'Issues',   badge: overdueIssues  || null },
     { key:'actions',   label:'Actions',  badge: overdueActions || null },
@@ -726,12 +1253,6 @@ export default function App() {
             filters={filters} setFilters={setFilters}
             onSelect={openUnit}
             onNew={() => setNewUnitOpen(true)}
-          />
-        )}
-        {activeView === 'heatmap' && (
-          <HeatMapView
-            units={computedUnits} state={state}
-            onSelect={openUnit}
           />
         )}
         {activeView === 'controls' && (
@@ -1300,73 +1821,6 @@ function RegisterView({ state, units, sort, onSort, filters, setFilters, onSelec
             })}
           </tbody>
         </table>
-      </div>
-    </>
-  );
-}
-
-function HeatMapView({ units, state, onSelect }) {
-  const irBands = ['Severe','High','Moderate','Low-Moderate','Low'];
-  const ceBands = ['Weak','Needs Improvement','Satisfactory','Strong'];
-  const grid = {};
-  irBands.forEach(ir => { grid[ir] = {}; ceBands.forEach(ce => { grid[ir][ce] = []; }); });
-  for (const u of units) {
-    if (u.ce !== null && u.irBand && u.ceBand) grid[u.irBand][u.ceBand].push(u);
-  }
-  const total = units.reduce((s, u) => s + (u.ce !== null ? 1 : 0), 0);
-
-  return (
-    <>
-      <div className="view-head">
-        <div>
-          <div className="view-title">Heat Map</div>
-          <div className="view-sub">{total} of {units.length} risk units have linked controls and a residual rating</div>
-        </div>
-      </div>
-      <div className="heat-wrap">
-        <table className="heat">
-          <thead>
-            <tr>
-              <th className="corner" />
-              {ceBands.map(ce => <th key={ce} className="axis-x">{ce}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            {irBands.map(ir => (
-              <tr key={ir}>
-                <th className="axis-y">{ir}</th>
-                {ceBands.map(ce => {
-                  const list = grid[ir][ce];
-                  const rr = getRRFromMatrix(ir, ce);
-                  const cls = `lvl-${RR_BAND_CLASS[rr]?.replace('r-', '') || ''}`;
-                  return (
-                    <td key={ce} className={`cell ${cls}`}>
-                      <span className="rrlabel">{rr}</span>
-                      <div className="units">
-                        {list.map(u => {
-                          const cat = state.riskCategories.find(r => r.id === u.riskCategoryId);
-                          const prod = state.products.find(p => p.id === u.productId);
-                          return (
-                            <span
-                              key={u.id} className="uc"
-                              title={`${cat?.name} × ${prod?.name}\nIR ${u.ir.toFixed(2)} · CE ${u.ce.toFixed(2)}`}
-                              onClick={() => onSelect(u.id)}
-                            >
-                              {u.riskCategoryId}·{prod?.name?.split(' ')[0] || u.productId}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="view-sub" style={{ marginTop: 10 }}>
-        Click any unit chip to open its detail. Cells are colored by residual risk band (matrix lookup).
       </div>
     </>
   );
