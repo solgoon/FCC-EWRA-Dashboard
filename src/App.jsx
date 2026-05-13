@@ -248,22 +248,153 @@ const STORAGE_KEY = 'kmoney-ewra-v2';
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) return migrate(JSON.parse(raw));
   } catch {}
   return null;
 }
 function saveState(s) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch {}
 }
+function migrate(s) {
+  if (!s) return s;
+  if (!Array.isArray(s.issues)) s.issues = [];
+  if (!Array.isArray(s.actions)) s.actions = [];
+  if (!Array.isArray(s.savedViews)) s.savedViews = [];
+  for (const u of s.riskUnits || []) {
+    if (!Array.isArray(u.updates)) u.updates = [];
+    if (u.notes == null) u.notes = '';
+  }
+  for (const c of s.controls || []) {
+    if (!Array.isArray(c.updates)) c.updates = [];
+  }
+  return s;
+}
 function getDefaults() {
   return {
     riskCategories: DEFAULT_RISK_CATEGORIES,
     products: DEFAULT_PRODUCTS,
     productCategories: PRODUCT_CATEGORIES,
-    controls: DEFAULT_CONTROLS.map(c => ({ ...c, mitigates:[...c.mitigates] })),
+    controls: DEFAULT_CONTROLS.map(c => ({ ...c, mitigates:[...c.mitigates], updates: [] })),
     riskUnits: makeDefaultRiskUnits(),
+    issues: SEED_ISSUES(),
+    actions: SEED_ACTIONS(),
+    savedViews: [],
     settings: { ...DEFAULT_SETTINGS, weights:{ ...DEFAULT_SETTINGS.weights } },
   };
+}
+
+function todayISO() { return new Date().toISOString().slice(0,10); }
+function nowISO()   { return new Date().toISOString(); }
+function isOverdue(dateStr) {
+  if (!dateStr) return false;
+  const d = String(dateStr).slice(0,10);
+  return d < todayISO();
+}
+function dueWithinDays(dateStr, days) {
+  if (!dateStr) return false;
+  const d = new Date(String(dateStr).slice(0,10));
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() + days);
+  return d <= cutoff && d >= new Date(todayISO());
+}
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  return String(dateStr).slice(0,10);
+}
+function nextId(prefix, list) {
+  const nums = (list || []).map(x => {
+    const m = new RegExp(`^${prefix}-?(\\d+)$`).exec(x.id || '');
+    return m ? parseInt(m[1], 10) : 0;
+  });
+  const n = (nums.length ? Math.max(...nums) : 0) + 1;
+  return `${prefix}-${String(n).padStart(3, '0')}`;
+}
+
+const ISSUE_SEVERITIES = ['Critical','High','Medium','Low'];
+const ISSUE_TYPES      = ['Finding','Observation','Incident'];
+const ISSUE_SOURCES    = ['Self-identified','Audit','Regulatory','Sponsor Bank'];
+const ISSUE_STATUSES   = ['Open','In Progress','Closed'];
+const ACTION_STATUSES  = ['Not Started','In Progress - Planning','In Progress - Execution','Completed','Cancelled'];
+
+const SEV_CLASS = { Critical:'r-sev', High:'r-high', Medium:'r-mod', Low:'r-low' };
+const STATUS_CLASS = {
+  'Open':'r-high', 'In Progress':'accent', 'Closed':'r-low',
+  'Not Started':'tag', 'In Progress - Planning':'accent',
+  'In Progress - Execution':'r-mod', 'Completed':'r-low', 'Cancelled':'tag',
+};
+
+function SEED_ISSUES() {
+  return [
+    {
+      id:'ISS-001',
+      title:'Mule-detection false-positive rate above tolerance',
+      description:'CTRL-010 alert volume up 38% week-over-week; analysts confirm majority are FPs. Risk: alert fatigue, true mules slipping through.',
+      severity:'High', type:'Finding', source:'Self-identified', status:'In Progress',
+      owner:'Fraud Lead', team:'BSA/AML',
+      identifiedDate:'2026-04-22', dueDate:'2026-05-25',
+      linkedRiskUnits:['RU-001'], linkedControls:['CTRL-010'],
+      notes:'', updates:[
+        { id:'upd-1', author:'BSA Officer', text:'Engineering scoped retune; ETA ~2 weeks.', date:'2026-04-28T15:10:00' },
+      ],
+    },
+    {
+      id:'ISS-002',
+      title:'Reg E disclosure language for high-yield APY pending review',
+      description:'Marketing copy for 6% APY feature has not yet passed CTRL-009 gate. Senate Banking Committee letter referenced explicitly.',
+      severity:'Critical', type:'Finding', source:'Regulatory', status:'Open',
+      owner:'CCO', team:'Compliance',
+      identifiedDate:'2026-04-18', dueDate:'2026-05-10',
+      linkedRiskUnits:[], linkedControls:['CTRL-009'],
+      notes:'', updates:[],
+    },
+    {
+      id:'ISS-003',
+      title:'Platform-integrity feed ingestion gap',
+      description:'CTRL-011 ramping with intermittent dropped events from parent platform; design effective but operating sub-target.',
+      severity:'Medium', type:'Observation', source:'Self-identified', status:'Open',
+      owner:'Eng Lead', team:'Engineering',
+      identifiedDate:'2026-04-30', dueDate:'2026-06-15',
+      linkedRiskUnits:['RU-001'], linkedControls:['CTRL-011'],
+      notes:'', updates:[],
+    },
+  ];
+}
+function SEED_ACTIONS() {
+  return [
+    {
+      id:'ACT-001',
+      title:'Retune mule-typology detector thresholds',
+      description:'Adjust velocity and graph-similarity thresholds to bring FPR back under 25%. Re-test on prior 30 days.',
+      status:'In Progress - Execution',
+      owner:'Fraud Engineering Manager', team:'Engineering',
+      dueDate:'2026-05-20', linkedIssueId:'ISS-001',
+      linkedRiskUnitIds:['RU-001'],
+      notes:'', updates:[
+        { id:'upd-1', author:'Fraud Lead', text:'Test set assembled; tuning underway.', date:'2026-05-02T11:30:00' },
+      ],
+      createdDate:'2026-04-23',
+    },
+    {
+      id:'ACT-002',
+      title:'Resubmit APY marketing copy through CTRL-009 gate',
+      description:'Rewrite to remove implied FDIC-direct language; route through sponsor bank legal review.',
+      status:'In Progress - Planning',
+      owner:'Marketing Lead', team:'Marketing',
+      dueDate:'2026-05-08', linkedIssueId:'ISS-002',
+      linkedRiskUnitIds:[], notes:'', updates:[],
+      createdDate:'2026-04-19',
+    },
+    {
+      id:'ACT-003',
+      title:'Telemetry retry + DLQ for parent integrity feed',
+      description:'Add retry logic + dead-letter queue for the integrity ingestion pipeline; alert on backlog > 5 min.',
+      status:'Not Started',
+      owner:'Platform Engineering', team:'Engineering',
+      dueDate:'2026-06-12', linkedIssueId:'ISS-003',
+      linkedRiskUnitIds:['RU-001'], notes:'', updates:[],
+      createdDate:'2026-05-01',
+    },
+  ];
 }
 
 function Chip({ band, value, kind = 'risk', size }) {
@@ -407,11 +538,16 @@ function useToast() {
 
 export default function App() {
   const [state, setState] = useState(() => loadState() || getDefaults());
-  const [tab, setTab] = useState('register');
+  const [tab, setTab] = useState('dashboard');
   const [selectedUnitId, setSelectedUnitId] = useState(null);
-  const [filters, setFilters] = useState({ category:'', product:'', rrBand:'', search:'' });
+  const [selectedIssueId, setSelectedIssueId] = useState(null);
+  const [selectedActionId, setSelectedActionId] = useState(null);
+  const [selectedControlId, setSelectedControlId] = useState(null);
+  const [filters, setFilters] = useState({ category:'', product:'', rrBand:'', search:'', status:'', unassessed:false, weightBad:false });
   const [sort, setSort] = useState({ key:'rr', dir:'desc' });
   const [newUnitOpen, setNewUnitOpen] = useState(false);
+  const [newIssueOpen, setNewIssueOpen] = useState(false);
+  const [newActionOpen, setNewActionOpen] = useState(false);
   const [toastNode, toast] = useToast();
   const fileInputRef = useRef(null);
 
@@ -453,6 +589,9 @@ export default function App() {
       if (filters.category && u.riskCategoryId !== filters.category) return false;
       if (filters.product && u.productId !== filters.product) return false;
       if (filters.rrBand && u.rrMatrixBand !== filters.rrBand) return false;
+      if (filters.status && u.status !== filters.status) return false;
+      if (filters.unassessed && !(u.status === 'Draft' && u.linkedControls.length === 0)) return false;
+      if (filters.weightBad && Math.abs(u.ceWeightSum - 1) < 0.001) return false;
       if (q) {
         const cat = getCat(u.riskCategoryId);
         const prod = getProd(u.productId);
@@ -507,7 +646,32 @@ export default function App() {
     }
   };
 
-  const activeView = selectedUnitId ? 'detail' : tab;
+  const overdueIssues  = useMemo(() => state.issues.filter(i => i.status !== 'Closed' && isOverdue(i.dueDate)).length, [state.issues]);
+  const overdueActions = useMemo(() => state.actions.filter(a => a.status !== 'Completed' && a.status !== 'Cancelled' && isOverdue(a.dueDate)).length, [state.actions]);
+
+  const goRegister = (patch = {}) => { setFilters(f => ({ category:'', product:'', rrBand:'', search:'', status:'', unassessed:false, weightBad:false, ...patch })); setTab('register'); setSelectedUnitId(null); setSelectedIssueId(null); setSelectedActionId(null); setSelectedControlId(null); };
+  const goTab = (key) => { setTab(key); setSelectedUnitId(null); setSelectedIssueId(null); setSelectedActionId(null); setSelectedControlId(null); };
+  const openUnit    = (id) => { setSelectedUnitId(id); setSelectedIssueId(null); setSelectedActionId(null); setSelectedControlId(null); };
+  const openIssue   = (id) => { setSelectedIssueId(id); setSelectedUnitId(null); setSelectedActionId(null); setSelectedControlId(null); setTab('issues'); };
+  const openAction  = (id) => { setSelectedActionId(id); setSelectedUnitId(null); setSelectedIssueId(null); setSelectedControlId(null); setTab('actions'); };
+  const openControl = (id) => { setSelectedControlId(id); setSelectedUnitId(null); setSelectedIssueId(null); setSelectedActionId(null); setTab('controls'); };
+
+  let activeView = tab;
+  if (selectedUnitId)    activeView = 'detail';
+  if (selectedIssueId)   activeView = 'issueDetail';
+  if (selectedActionId)  activeView = 'actionDetail';
+  if (selectedControlId) activeView = 'controlDetail';
+
+  const navTabs = [
+    { key:'dashboard', label:'Dashboard' },
+    { key:'register',  label:'Register' },
+    { key:'heatmap',   label:'Heat Map' },
+    { key:'controls',  label:'Controls' },
+    { key:'issues',    label:'Issues',   badge: overdueIssues  || null },
+    { key:'actions',   label:'Actions',  badge: overdueActions || null },
+    { key:'reports',   label:'Reports' },
+    { key:'settings',  label:'Settings' },
+  ];
 
   return (
     <>
@@ -519,19 +683,24 @@ export default function App() {
             <div className="s">PCGC Matrix · v2.0</div>
           </div>
         </div>
-        <nav className="tabs" aria-label="Primary">
-          {[
-            { key:'register', label:'Register' },
-            { key:'heatmap',  label:'Heat Map' },
-            { key:'controls', label:'Controls' },
-            { key:'settings', label:'Settings' },
-          ].map(t => (
-            <button
-              key={t.key}
-              className={`tab ${activeView === t.key ? 'active' : ''}`}
-              onClick={() => { setTab(t.key); setSelectedUnitId(null); }}
-            >{t.label}</button>
-          ))}
+        <nav className="tabs tabs-compact" aria-label="Primary">
+          {navTabs.map(t => {
+            const isActive = (t.key === 'register' && (activeView === 'register' || activeView === 'detail'))
+              || (t.key === 'issues' && (activeView === 'issues' || activeView === 'issueDetail'))
+              || (t.key === 'actions' && (activeView === 'actions' || activeView === 'actionDetail'))
+              || (t.key === 'controls' && (activeView === 'controls' || activeView === 'controlDetail'))
+              || activeView === t.key;
+            return (
+              <button
+                key={t.key}
+                className={`tab ${isActive ? 'active' : ''}`}
+                onClick={() => goTab(t.key)}
+              >
+                {t.label}
+                {t.badge ? <span className="tab-badge">{t.badge}</span> : null}
+              </button>
+            );
+          })}
         </nav>
         <div className="topbar-right">
           <span className="chip tag" title="Control credit cap (α)"><span>α</span><span className="num">{state.settings.alpha.toFixed(2)}</span></span>
@@ -539,23 +708,95 @@ export default function App() {
       </header>
 
       <main>
+        {activeView === 'dashboard' && (
+          <DashboardView
+            state={state}
+            units={computedUnits}
+            goRegister={goRegister}
+            goTab={goTab}
+            openUnit={openUnit}
+            openIssue={openIssue}
+            openAction={openAction}
+            openControl={openControl}
+          />
+        )}
         {activeView === 'register' && (
           <RegisterView
             state={state} units={filtered} sort={sort} onSort={onSort}
             filters={filters} setFilters={setFilters}
-            onSelect={(id) => setSelectedUnitId(id)}
+            onSelect={openUnit}
             onNew={() => setNewUnitOpen(true)}
           />
         )}
         {activeView === 'heatmap' && (
           <HeatMapView
             units={computedUnits} state={state}
-            onSelect={(id) => setSelectedUnitId(id)}
+            onSelect={openUnit}
           />
         )}
         {activeView === 'controls' && (
           <ControlsView
             state={state} update={update} toast={toast}
+            units={computedUnits}
+            onOpen={openControl}
+          />
+        )}
+        {activeView === 'controlDetail' && (
+          <ControlDetailView
+            state={state} update={update}
+            controlId={selectedControlId}
+            units={computedUnits}
+            onBack={() => setSelectedControlId(null)}
+            openUnit={openUnit}
+            openIssue={openIssue}
+            toast={toast}
+          />
+        )}
+        {activeView === 'issues' && (
+          <IssuesView
+            state={state}
+            onOpen={openIssue}
+            onNew={() => setNewIssueOpen(true)}
+          />
+        )}
+        {activeView === 'issueDetail' && (
+          <IssueDetailView
+            state={state} update={update}
+            issueId={selectedIssueId}
+            onBack={() => setSelectedIssueId(null)}
+            openUnit={openUnit}
+            openControl={openControl}
+            openAction={openAction}
+            onNewAction={() => setNewActionOpen(true)}
+            toast={toast}
+          />
+        )}
+        {activeView === 'actions' && (
+          <ActionsView
+            state={state}
+            onOpen={openAction}
+            onNew={() => setNewActionOpen(true)}
+          />
+        )}
+        {activeView === 'actionDetail' && (
+          <ActionDetailView
+            state={state} update={update}
+            actionId={selectedActionId}
+            onBack={() => setSelectedActionId(null)}
+            openIssue={openIssue}
+            openUnit={openUnit}
+            toast={toast}
+          />
+        )}
+        {activeView === 'reports' && (
+          <ReportsView
+            state={state}
+            units={computedUnits}
+            openUnit={openUnit}
+            openIssue={openIssue}
+            openAction={openAction}
+            openControl={openControl}
+            onExport={exportJSON}
           />
         )}
         {activeView === 'settings' && (
@@ -571,6 +812,11 @@ export default function App() {
             unit={computedUnits.find(u => u.id === selectedUnitId)}
             onBack={() => setSelectedUnitId(null)}
             onAlpha={(a) => update(s => { s.settings.alpha = a; })}
+            openControl={openControl}
+            openIssue={openIssue}
+            openAction={openAction}
+            onNewIssue={() => setNewIssueOpen(true)}
+            onNewAction={() => setNewActionOpen(true)}
             toast={toast}
           />
         )}
@@ -588,20 +834,51 @@ export default function App() {
           existing={state.riskUnits}
           onClose={() => setNewUnitOpen(false)}
           onCreate={(rcId, pid, owner) => {
-            const id = `RU-${String(state.riskUnits.length + 1).padStart(3,'0')}`;
+            const id = nextId('RU', state.riskUnits);
             update(s => {
               s.riskUnits.push({
                 id, riskCategoryId: rcId, productId: pid,
                 owner: owner || '', status: 'Draft', notes: '',
-                lastUpdated: new Date().toISOString().slice(0,10),
+                lastUpdated: todayISO(),
                 factorScores: { P:3, C:3, G:2, Ch:3 },
                 factorNarratives: { P:'', C:'', G:'', Ch:'' },
-                linkedControls: [],
+                linkedControls: [], updates: [],
               });
             });
             setNewUnitOpen(false);
-            setSelectedUnitId(id);
+            openUnit(id);
             toast('Risk unit created');
+          }}
+        />
+      )}
+
+      {newIssueOpen && (
+        <NewIssueModal
+          state={state}
+          defaultRiskUnitId={selectedUnitId || ''}
+          onClose={() => setNewIssueOpen(false)}
+          onCreate={(payload) => {
+            const id = nextId('ISS', state.issues);
+            update(s => { s.issues.push({ id, ...payload, identifiedDate: todayISO(), updates: [] }); });
+            setNewIssueOpen(false);
+            openIssue(id);
+            toast('Issue created');
+          }}
+        />
+      )}
+
+      {newActionOpen && (
+        <NewActionModal
+          state={state}
+          defaultIssueId={selectedIssueId || ''}
+          defaultRiskUnitId={selectedUnitId || ''}
+          onClose={() => setNewActionOpen(false)}
+          onCreate={(payload) => {
+            const id = nextId('ACT', state.actions);
+            update(s => { s.actions.push({ id, ...payload, createdDate: todayISO(), updates: [] }); });
+            setNewActionOpen(false);
+            openAction(id);
+            toast('Action created');
           }}
         />
       )}
@@ -611,7 +888,7 @@ export default function App() {
   );
 }
 
-function DetailView({ state, update, unit, onBack, onAlpha, toast }) {
+function DetailView({ state, update, unit, onBack, onAlpha, openControl, openIssue, openAction, onNewIssue, onNewAction, toast }) {
   if (!unit) {
     return <div className="empty">Risk unit not found. <button className="btn btn-sm" onClick={onBack}>Back to register</button></div>;
   }
@@ -655,8 +932,19 @@ function DetailView({ state, update, unit, onBack, onAlpha, toast }) {
   const fs = unit.factorScores;
   const irExpr = `${w.P}·${fs.P.toFixed(1)} + ${w.C}·${fs.C.toFixed(1)} + ${w.G}·${fs.G.toFixed(1)} + ${w.Ch}·${fs.Ch.toFixed(1)}`;
 
+  const linkedIssues  = state.issues.filter(i => (i.linkedRiskUnits || []).includes(unit.id));
+  const linkedActions = state.actions.filter(a => (a.linkedRiskUnitIds || []).includes(unit.id));
+
   return (
     <>
+      <Breadcrumb items={[
+        { label:'Dashboard' },
+        { label:'Register', onClick: onBack },
+        { label: cat?.id },
+        { label: prod?.name },
+        { label: unit.id },
+      ]} />
+
       <div className="row gap-sm" style={{ marginBottom: 10 }}>
         <button className="btn btn-sm btn-ghost" onClick={onBack}>← Back</button>
         <span className="spacer" />
@@ -828,6 +1116,73 @@ function DetailView({ state, update, unit, onBack, onAlpha, toast }) {
           )}
         </div>
       )}
+
+      <div className="dash-grid">
+        <div className="card">
+          <div className="card-title" style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+            <span><span className="accent-dot" /> Linked issues</span>
+            <button className="btn btn-sm" onClick={onNewIssue}>+ Issue</button>
+          </div>
+          {linkedIssues.length === 0
+            ? <div className="empty" style={{ padding: 20 }}>No issues raised against this risk unit.</div>
+            : (
+              <table className="lc-table">
+                <thead><tr><th>Ref</th><th>Title</th><th>Severity</th><th>Due</th><th>Status</th></tr></thead>
+                <tbody>
+                  {linkedIssues.map(i => (
+                    <tr key={i.id} className="click" onClick={() => openIssue(i.id)}>
+                      <td className="num" style={{ color:'var(--accent)' }}>{i.id}</td>
+                      <td>{i.title}</td>
+                      <td><SeverityChip severity={i.severity} /></td>
+                      <td className="num">{formatDate(i.dueDate)} <OverduePill date={i.status === 'Closed' ? null : i.dueDate} /></td>
+                      <td><WorkStatusChip status={i.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+        </div>
+        <div className="card">
+          <div className="card-title" style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+            <span><span className="accent-dot" /> Linked actions</span>
+            <button className="btn btn-sm" onClick={onNewAction}>+ Action</button>
+          </div>
+          {linkedActions.length === 0
+            ? <div className="empty" style={{ padding: 20 }}>No remediation actions assigned.</div>
+            : (
+              <table className="lc-table">
+                <thead><tr><th>Ref</th><th>Title</th><th>Owner</th><th>Due</th><th>Status</th></tr></thead>
+                <tbody>
+                  {linkedActions.map(a => (
+                    <tr key={a.id} className="click" onClick={() => openAction(a.id)}>
+                      <td className="num" style={{ color:'var(--accent)' }}>{a.id}</td>
+                      <td>{a.title}</td>
+                      <td className="muted">{a.owner || '—'}</td>
+                      <td className="num">{formatDate(a.dueDate)} <OverduePill date={['Completed','Cancelled'].includes(a.status) ? null : a.dueDate} /></td>
+                      <td><WorkStatusChip status={a.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-title"><span className="accent-dot" /> Notes</div>
+        <textarea
+          className="textarea" placeholder="Assessor rationale, examiner feedback, anything that doesn't fit a factor narrative…"
+          value={raw.notes || ''} onChange={(e) => setMeta('notes', e.target.value)}
+          style={{ minHeight: 80 }}
+        />
+      </div>
+
+      <UpdatesPanel
+        updates={raw.updates}
+        defaultAuthor={raw.owner || 'admin'}
+        onPost={(u) => update(s => { s.riskUnits[idx].updates = [...(s.riskUnits[idx].updates || []), u]; })}
+        onDelete={(uid) => update(s => { s.riskUnits[idx].updates = (s.riskUnits[idx].updates || []).filter(x => x.id !== uid); })}
+      />
     </>
   );
 }
@@ -843,6 +1198,18 @@ function SortHeader({ label, k, sort, onSort }) {
 }
 
 function RegisterView({ state, units, sort, onSort, filters, setFilters, onSelect, onNew }) {
+  const overdueByUnit = useMemo(() => {
+    const m = {};
+    for (const i of state.issues) {
+      if (i.status === 'Closed' || !isOverdue(i.dueDate)) continue;
+      for (const rid of (i.linkedRiskUnits || [])) m[rid] = (m[rid] || 0) + 1;
+    }
+    for (const a of state.actions) {
+      if (['Completed','Cancelled'].includes(a.status) || !isOverdue(a.dueDate)) continue;
+      for (const rid of (a.linkedRiskUnitIds || [])) m[rid] = (m[rid] || 0) + 1;
+    }
+    return m;
+  }, [state.issues, state.actions]);
   return (
     <>
       <div className="view-head">
@@ -921,6 +1288,8 @@ function RegisterView({ state, units, sort, onSort, filters, setFilters, onSelec
                         ? <Chip band={u.rrMatrixBand} />
                         : <span className="muted">—</span>}
                       {u.disagree && <span className="warn-pill" title="Matrix and formula disagree by more than one band">⚠ check</span>}
+                      {overdueByUnit[u.id] && <span className="dot-pill" title={`${overdueByUnit[u.id]} overdue item${overdueByUnit[u.id]>1?'s':''}`}>▲ overdue</span>}
+                      {u.status === 'Draft' && u.linkedControls.length === 0 && <span className="dot-pill tag" title="No assessment yet">unassessed</span>}
                     </span>
                   </td>
                   <td className="muted">{u.owner || 'Unassigned'}</td>
@@ -1003,7 +1372,7 @@ function HeatMapView({ units, state, onSelect }) {
   );
 }
 
-function ControlsView({ state, update, toast }) {
+function ControlsView({ state, update, toast, units = [], onOpen }) {
   const inUse = useMemo(() => {
     const m = {};
     state.riskUnits.forEach(u => u.linkedControls.forEach(lc => {
@@ -1011,6 +1380,21 @@ function ControlsView({ state, update, toast }) {
     }));
     return m;
   }, [state.riskUnits]);
+
+  const avgCE = useMemo(() => {
+    const m = {};
+    for (const u of units) {
+      for (const lc of (u.linkedControls || [])) {
+        const v = getCEFromMatrix(lc.DE, lc.OE);
+        if (!Number.isFinite(v)) continue;
+        if (!m[lc.controlId]) m[lc.controlId] = { sum: 0, n: 0 };
+        m[lc.controlId].sum += v; m[lc.controlId].n += 1;
+      }
+    }
+    const out = {};
+    for (const k in m) out[k] = m[k].n ? Math.round((m[k].sum / m[k].n) * 100) / 100 : null;
+    return out;
+  }, [units]);
 
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState('');
@@ -1068,12 +1452,13 @@ function ControlsView({ state, update, toast }) {
               <th style={{ width: 110 }}>Owner</th>
               <th style={{ width: 220 }}>Mitigates</th>
               <th style={{ width: 80 }}>In use</th>
-              <th style={{ width: 90 }}></th>
+              <th style={{ width: 110 }}>Avg CE</th>
+              <th style={{ width: 140 }}></th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
-              <tr><td colSpan={9} className="empty">No controls match your search.</td></tr>
+              <tr><td colSpan={10} className="empty">No controls match your search.</td></tr>
             )}
             {filtered.map(c => {
               const isEditing = editing === c.id;
@@ -1120,7 +1505,13 @@ function ControlsView({ state, update, toast }) {
                   </td>
                   <td className="num" style={{ color: inUse[c.id] ? 'var(--c-strong)' : 'var(--muted)' }}>{inUse[c.id] || 0}</td>
                   <td>
+                    {avgCE[c.id] != null
+                      ? <Chip kind="ce" band={getCEBand(avgCE[c.id])} value={avgCE[c.id]} />
+                      : <span className="muted">—</span>}
+                  </td>
+                  <td>
                     <div className="row gap-sm">
+                      <button className="btn btn-sm" onClick={() => onOpen?.(c.id)}>Open</button>
                       <button className="btn btn-sm" onClick={() => setEditing(isEditing ? null : c.id)}>{isEditing ? 'Done' : 'Edit'}</button>
                       <button className="btn btn-sm btn-danger" onClick={() => del(c.id)}>Del</button>
                     </div>
@@ -1253,3 +1644,1339 @@ function NewUnitModal({ state, existing, onClose, onCreate }) {
     </Modal>
   );
 }
+
+function Breadcrumb({ items }) {
+  return (
+    <div className="bc">
+      {items.map((it, i) => (
+        <span key={i} className="bc-seg">
+          {it.onClick ? <button className="bc-link" onClick={it.onClick}>{it.label}</button> : <span>{it.label}</span>}
+          {i < items.length - 1 && <span className="bc-sep">/</span>}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function SeverityChip({ severity }) {
+  if (!severity) return null;
+  const cls = SEV_CLASS[severity] || 'tag';
+  return <span className={`chip ${cls}`}>{severity}</span>;
+}
+
+function WorkStatusChip({ status }) {
+  if (!status) return null;
+  const cls = STATUS_CLASS[status] || 'tag';
+  return <span className={`chip ${cls}`}>{status}</span>;
+}
+
+function OverduePill({ date, kind = 'date' }) {
+  if (!date || !isOverdue(date)) return null;
+  return <span className="overdue-pill" title="Past due">▲ OVERDUE</span>;
+}
+
+function UpdatesPanel({ updates, defaultAuthor = 'admin', onPost, onDelete }) {
+  const [text, setText] = useState('');
+  const [author, setAuthor] = useState(defaultAuthor || 'admin');
+  const sorted = [...(updates || [])].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const post = () => {
+    const t = text.trim(); if (!t) return;
+    onPost({ id: `upd-${Date.now()}`, author: author || defaultAuthor || 'admin', text: t, date: nowISO() });
+    setText('');
+  };
+  return (
+    <div className="card">
+      <div className="card-title"><span className="accent-dot" /> Updates</div>
+      <div className="update-input">
+        <input
+          className="input" style={{ width: 160 }}
+          placeholder="Author" value={author} onChange={(e) => setAuthor(e.target.value)}
+        />
+        <textarea
+          className="textarea" placeholder="Post an update…" value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') post(); }}
+          style={{ flex: 1, minHeight: 48 }}
+        />
+        <button className="btn btn-primary" onClick={post} disabled={!text.trim()}>Post</button>
+      </div>
+      {sorted.length === 0 ? (
+        <div className="empty" style={{ padding: 20 }}>No updates yet.</div>
+      ) : (
+        <div className="update-list">
+          {sorted.map(u => (
+            <div className="update-item" key={u.id}>
+              <div className="update-head">
+                <span className="update-author">{u.author || 'admin'}</span>
+                <span className="update-date num">{(u.date || '').replace('T', ' ').slice(0,16)}</span>
+                {onDelete && <button className="btn btn-sm btn-ghost" onClick={() => onDelete(u.id)} title="Delete">×</button>}
+              </div>
+              <div className="update-text">{u.text}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function KpiCard({ label, value, sub, tone = 'accent', onClick }) {
+  return (
+    <button className={`kpi kpi-${tone}`} onClick={onClick} disabled={!onClick}>
+      <div className="kpi-value num">{value}</div>
+      <div className="kpi-label">{label}</div>
+      {sub && <div className="kpi-sub">{sub}</div>}
+    </button>
+  );
+}
+
+function MiniHeat({ title, units, axisLabel, getBand }) {
+  const irBands = ['Severe','High','Moderate','Low-Moderate','Low'];
+  const products = [...new Set(units.map(u => u.productId))];
+  const grid = {};
+  irBands.forEach(b => { grid[b] = {}; products.forEach(p => { grid[b][p] = 0; }); });
+  for (const u of units) {
+    const b = getBand(u);
+    if (!b || !grid[b]) continue;
+    if (grid[b][u.productId] == null) grid[b][u.productId] = 0;
+    grid[b][u.productId]++;
+  }
+  return (
+    <div className="card">
+      <div className="card-title"><span className="accent-dot" />{title}</div>
+      <div className="mini-heat-wrap">
+        <table className="mini-heat">
+          <thead>
+            <tr>
+              <th className="corner">{axisLabel}</th>
+              {products.map(p => <th key={p} className="axis-x">{p.replace('P-0','P')}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {irBands.map(b => (
+              <tr key={b}>
+                <th className="axis-y"><Chip band={b} /></th>
+                {products.map(p => {
+                  const n = grid[b][p] || 0;
+                  const cls = `lvl-${RR_BAND_CLASS[b]?.replace('r-', '') || ''}`;
+                  return (
+                    <td key={p} className={`mini-cell ${n ? cls : 'mini-empty'}`}>
+                      <span className="num">{n || ''}</span>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function DashboardView({ state, units, goRegister, goTab, openUnit, openIssue, openAction, openControl }) {
+  const total = units.length;
+  const assessed = units.filter(u => u.status === 'Assessed').length;
+  const draft = units.filter(u => u.status === 'Draft').length;
+  const highSev = units.filter(u => u.rrMatrixBand === 'High' || u.rrMatrixBand === 'Severe');
+  const highCount = highSev.filter(u => u.rrMatrixBand === 'High').length;
+  const sevCount  = highSev.filter(u => u.rrMatrixBand === 'Severe').length;
+
+  const weakControlsCount = useMemo(() => {
+    let cnt = 0, ruIds = new Set();
+    for (const u of units) {
+      for (const lc of (u.linkedControls || [])) {
+        const ceVal = getCEFromMatrix(lc.DE, lc.OE);
+        const b = getCEBand(ceVal);
+        if (b === 'Weak' || b === 'Needs Improvement') { cnt++; ruIds.add(u.id); }
+      }
+    }
+    return { cnt, ruIds: ruIds.size };
+  }, [units]);
+
+  const unassessed = units.filter(u => u.status === 'Draft' && (u.linkedControls || []).length === 0).length;
+  const wBadCount = units.filter(u => u.linkedControls.length > 0 && Math.abs(u.ceWeightSum - 1) >= 0.001).length;
+
+  const ceBuckets = { 'Strong':0, 'Satisfactory':0, 'Needs Improvement':0, 'Weak':0, 'Unassessed':0 };
+  for (const u of units) {
+    if (!u.ceBand) ceBuckets['Unassessed']++;
+    else ceBuckets[u.ceBand]++;
+  }
+  const ceTotal = total || 1;
+
+  const attention = useMemo(() => {
+    const out = [];
+    for (const u of units) {
+      if (u.disagree) out.push({ kind:'unit', id:u.id, label:`${u.id} · matrix/formula disagree by >1 band`, tone:'r-mod', click: () => openUnit(u.id) });
+    }
+    for (const u of units) {
+      if (u.status === 'Draft' && (u.linkedControls || []).length === 0)
+        out.push({ kind:'unit', id:u.id, label:`${u.id} · draft with no linked controls`, tone:'tag', click: () => openUnit(u.id) });
+    }
+    for (const u of units) {
+      if (u.linkedControls.length > 0 && Math.abs(u.ceWeightSum - 1) >= 0.001)
+        out.push({ kind:'unit', id:u.id, label:`${u.id} · Σ weights = ${u.ceWeightSum.toFixed(2)} (≠ 1.00)`, tone:'r-sev', click: () => openUnit(u.id) });
+    }
+    const usedControls = new Set(units.flatMap(u => u.linkedControls.map(l => l.controlId)));
+    for (const c of state.controls) {
+      if (!usedControls.has(c.id))
+        out.push({ kind:'control', id:c.id, label:`${c.id} · orphan control (not linked to any risk unit)`, tone:'tag', click: () => openControl(c.id) });
+    }
+    for (const u of units) {
+      for (const lc of u.linkedControls) {
+        if (lc.DE === 1 || lc.OE === 1) {
+          out.push({ kind:'unit', id:u.id, label:`${u.id} · ${lc.controlId} rated ${lc.DE === 1 ? 'DE=1' : ''}${lc.DE === 1 && lc.OE === 1 ? ' / ' : ''}${lc.OE === 1 ? 'OE=1' : ''} (ineffective)`, tone:'r-sev', click: () => openUnit(u.id) });
+          break;
+        }
+      }
+    }
+    return out.slice(0, 12);
+  }, [units, state.controls]);
+
+  const recentActivity = useMemo(() => {
+    const items = [];
+    for (const i of state.issues) for (const u of (i.updates || [])) items.push({ ...u, parent:`ISS · ${i.id}`, parentLabel: i.title, click: () => openIssue(i.id) });
+    for (const a of state.actions) for (const u of (a.updates || [])) items.push({ ...u, parent:`ACT · ${a.id}`, parentLabel: a.title, click: () => openAction(a.id) });
+    for (const u of state.riskUnits) for (const up of (u.updates || [])) items.push({ ...up, parent:`RU · ${u.id}`, parentLabel: `${u.riskCategoryId} × ${state.products.find(p => p.id === u.productId)?.name || u.productId}`, click: () => openUnit(u.id) });
+    items.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    return items.slice(0, 8);
+  }, [state.issues, state.actions, state.riskUnits, state.products]);
+
+  return (
+    <>
+      <div className="view-head">
+        <div>
+          <div className="view-title">Dashboard</div>
+          <div className="view-sub">{total} risk units · {assessed} assessed · {state.issues.length} issues · {state.actions.length} actions</div>
+        </div>
+      </div>
+
+      <div className="kpi-row">
+        <KpiCard label="Total risk units"      value={total}        sub={`${assessed} assessed · ${draft} draft`}              tone="accent" onClick={() => goRegister()} />
+        <KpiCard label="High / Severe residual"value={highSev.length} sub={`${highCount} high · ${sevCount} severe`}            tone="sev"    onClick={() => goRegister({ rrBand:'High' })} />
+        <KpiCard label="Weak / Needs improv."  value={weakControlsCount.cnt} sub={`across ${weakControlsCount.ruIds} risk units`}      tone="high"   onClick={() => goTab('controls')} />
+        <KpiCard label="Unassessed units"      value={unassessed}   sub="draft, no controls linked"                                 tone="tag"    onClick={() => goRegister({ unassessed: true })} />
+        <KpiCard label="Weight violations"     value={wBadCount}    sub="Σ weights ≠ 1.00"                                          tone="sev"    onClick={() => goRegister({ weightBad: true })} />
+      </div>
+
+      <div className="dash-grid">
+        <MiniHeat title="Inherent Risk by Product"  units={units} axisLabel="IR / Product" getBand={(u) => u.irBand} />
+        <MiniHeat title="Residual Risk by Product"  units={units} axisLabel="RR / Product" getBand={(u) => u.rrMatrixBand} />
+      </div>
+
+      <div className="card">
+        <div className="card-title"><span className="accent-dot" /> Control Effectiveness distribution</div>
+        <div className="stack-bar">
+          {['Strong','Satisfactory','Needs Improvement','Weak','Unassessed'].map(b => {
+            const n = ceBuckets[b];
+            if (!n) return null;
+            const pct = Math.round((n / ceTotal) * 100);
+            const cls = b === 'Unassessed' ? 'tag' : (CE_BAND_CLASS[b] || 'tag');
+            return (
+              <button key={b} className={`stack-seg seg-${cls}`} style={{ width: `${pct}%` }} title={`${b}: ${n} (${pct}%)`} onClick={() => goRegister({ rrBand:'' })}>
+                <span className="seg-label">{b}</span>
+                <span className="seg-count num">{n}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="stack-legend">
+          {Object.entries(ceBuckets).map(([b, n]) => (
+            <span key={b} className="legend-item">
+              <span className={`legend-dot dot-${b === 'Unassessed' ? 'tag' : (CE_BAND_CLASS[b] || 'tag')}`} />
+              {b} <span className="num">{n}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="dash-grid">
+        <div className="card">
+          <div className="card-title"><span className="accent-dot" /> Attention items</div>
+          {attention.length === 0
+            ? <div className="empty" style={{ padding: 20 }}>Nothing needs attention right now. Nice.</div>
+            : (
+              <div className="attn-list">
+                {attention.map((a, i) => (
+                  <button key={i} className={`attn-item attn-${a.tone}`} onClick={a.click}>
+                    <span className="attn-dot" />
+                    <span className="attn-label">{a.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+        </div>
+        <div className="card">
+          <div className="card-title"><span className="accent-dot" /> Recent activity</div>
+          {recentActivity.length === 0
+            ? <div className="empty" style={{ padding: 20 }}>No updates posted yet.</div>
+            : (
+              <div className="activity-list">
+                {recentActivity.map((it, i) => (
+                  <button key={i} className="activity-item" onClick={it.click}>
+                    <div className="activity-meta">
+                      <span className="activity-author">{it.author || 'admin'}</span>
+                      <span className="activity-parent">{it.parent}</span>
+                      <span className="activity-date num">{(it.date || '').replace('T',' ').slice(0,16)}</span>
+                    </div>
+                    <div className="activity-text">{it.text}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-title"><span className="accent-dot" /> Risk Category × Product coverage</div>
+        <div className="coverage-wrap">
+          <table className="coverage">
+            <thead>
+              <tr>
+                <th></th>
+                {state.products.map(p => <th key={p.id}>{p.name}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {state.riskCategories.map(rc => (
+                <tr key={rc.id}>
+                  <th className="rc-cell"><span className="num" style={{ color:'var(--accent)' }}>{rc.id}</span> <span className="muted">{rc.name}</span></th>
+                  {state.products.map(p => {
+                    const u = units.find(x => x.riskCategoryId === rc.id && x.productId === p.id);
+                    if (!u) return <td key={p.id} className="cov-empty">·</td>;
+                    let dot = 'dot-tag', title = `${u.id} · ${u.status}`;
+                    if (u.status === 'Draft') dot = 'dot-tag';
+                    else if (u.rrMatrixBand === 'Severe') dot = 'dot-r-sev';
+                    else if (u.rrMatrixBand === 'High') dot = 'dot-r-mod';
+                    else if (u.rrMatrixBand) dot = 'dot-r-low';
+                    title += u.rrMatrixBand ? ` · RR ${u.rrMatrixBand}` : '';
+                    return (
+                      <td key={p.id}>
+                        <button className={`cov-dot ${dot}`} title={title} onClick={() => openUnit(u.id)} />
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function IssuesView({ state, onOpen, onNew }) {
+  const [search, setSearch] = useState('');
+  const [sev, setSev] = useState('');
+  const [type, setType] = useState('');
+  const [status, setStatus] = useState('Active');
+  const [sort, setSort] = useState({ key:'due', dir:'asc' });
+
+  const rows = useMemo(() => {
+    let r = state.issues.filter(i => {
+      if (sev && i.severity !== sev) return false;
+      if (type && i.type !== type) return false;
+      if (status === 'Active' && i.status === 'Closed') return false;
+      else if (status && status !== 'Active' && i.status !== status) return false;
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        if (!`${i.id} ${i.title} ${i.owner} ${i.team} ${i.description}`.toLowerCase().includes(q)) return false;
+      }
+      return true;
+    });
+    const d = sort.dir === 'asc' ? 1 : -1;
+    const sevOrder = { Critical:4, High:3, Medium:2, Low:1 };
+    r.sort((a, b) => {
+      switch (sort.key) {
+        case 'id':    return d * a.id.localeCompare(b.id);
+        case 'title': return d * a.title.localeCompare(b.title);
+        case 'sev':   return d * ((sevOrder[a.severity] || 0) - (sevOrder[b.severity] || 0));
+        case 'due':   return d * (a.dueDate || '').localeCompare(b.dueDate || '');
+        case 'owner': return d * (a.owner || '').localeCompare(b.owner || '');
+        case 'status':return d * a.status.localeCompare(b.status);
+        default:      return 0;
+      }
+    });
+    return r;
+  }, [state.issues, search, sev, type, status, sort]);
+
+  const onSort = (k) => setSort(s => s.key === k ? { key:k, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key:k, dir:'asc' });
+
+  return (
+    <>
+      <div className="view-head">
+        <div>
+          <div className="view-title">Issues</div>
+          <div className="view-sub">{rows.length} of {state.issues.length} · findings, observations, and incidents</div>
+        </div>
+        <button className="btn btn-primary" onClick={onNew}>+ New issue</button>
+      </div>
+
+      <div className="filterbar">
+        <span className="label">Filter</span>
+        <input className="input" placeholder="Search id, title, owner…" value={search} onChange={e => setSearch(e.target.value)} />
+        <select className="select" value={sev} onChange={e => setSev(e.target.value)}>
+          <option value="">All severities</option>
+          {ISSUE_SEVERITIES.map(s => <option key={s}>{s}</option>)}
+        </select>
+        <select className="select" value={type} onChange={e => setType(e.target.value)}>
+          <option value="">All types</option>
+          {ISSUE_TYPES.map(s => <option key={s}>{s}</option>)}
+        </select>
+        <select className="select" value={status} onChange={e => setStatus(e.target.value)}>
+          <option value="Active">Active (Open + In Progress)</option>
+          <option value="">All</option>
+          {ISSUE_STATUSES.map(s => <option key={s}>{s}</option>)}
+        </select>
+      </div>
+
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <SortHeader label="Ref"      k="id"     sort={sort} onSort={onSort} />
+              <SortHeader label="Title"    k="title"  sort={sort} onSort={onSort} />
+              <SortHeader label="Severity" k="sev"    sort={sort} onSort={onSort} />
+              <th>Type</th>
+              <SortHeader label="Owner"    k="owner"  sort={sort} onSort={onSort} />
+              <th>Team</th>
+              <SortHeader label="Due"      k="due"    sort={sort} onSort={onSort} />
+              <SortHeader label="Status"   k="status" sort={sort} onSort={onSort} />
+              <th>Source</th>
+              <th>Links</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr><td colSpan={10} className="empty">No issues match your filters. <button className="btn btn-sm btn-primary" style={{ marginLeft: 8 }} onClick={onNew}>+ Create your first issue</button></td></tr>
+            ) : rows.map(i => (
+              <tr key={i.id} className="click" onClick={() => onOpen(i.id)}>
+                <td className="num" style={{ color:'var(--accent)', fontWeight:600 }}>{i.id}</td>
+                <td>
+                  <div className="two-line">
+                    <span className="top">{i.title}</span>
+                    <span className="bot" style={{ color:'var(--muted)', fontFamily:'var(--sans)', fontSize:12 }}>{i.description?.slice(0,80)}{i.description?.length > 80 ? '…' : ''}</span>
+                  </div>
+                </td>
+                <td><SeverityChip severity={i.severity} /></td>
+                <td className="muted">{i.type}</td>
+                <td>{i.owner || <span className="muted">—</span>}</td>
+                <td className="muted">{i.team || '—'}</td>
+                <td className="num">{formatDate(i.dueDate)} <OverduePill date={i.status === 'Closed' ? null : i.dueDate} /></td>
+                <td><WorkStatusChip status={i.status} /></td>
+                <td className="muted">{i.source}</td>
+                <td className="muted num">
+                  {(i.linkedRiskUnits?.length || 0)}R · {(i.linkedControls?.length || 0)}C
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+function LinkPicker({ value, onChange, options, placeholder, onClick }) {
+  const remaining = options.filter(o => !value.includes(o.id));
+  return (
+    <>
+      <div className="mit-list">
+        {value.length === 0 && <span className="muted" style={{ fontSize: 12.5 }}>None linked yet.</span>}
+        {value.map(id => (
+          <span key={id} className="chip tag removable">
+            <button className="link-text" onClick={(e) => { e.stopPropagation(); onClick?.(id); }}>{id}</button>
+            <span className="x" onClick={() => onChange(value.filter(v => v !== id))}>×</span>
+          </span>
+        ))}
+      </div>
+      {remaining.length > 0 && (
+        <select
+          className="select" value="" style={{ marginTop: 8, maxWidth: 360 }}
+          onChange={(e) => { if (e.target.value) onChange([...value, e.target.value]); }}
+        >
+          <option value="">+ {placeholder}</option>
+          {remaining.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}
+        </select>
+      )}
+    </>
+  );
+}
+
+function IssueDetailView({ state, update, issueId, onBack, openUnit, openControl, openAction, onNewAction, toast }) {
+  const idx = state.issues.findIndex(i => i.id === issueId);
+  const issue = state.issues[idx];
+  if (!issue) return <div className="empty">Issue not found. <button className="btn btn-sm" onClick={onBack}>Back</button></div>;
+
+  const set = (patch) => update(s => { Object.assign(s.issues[idx], patch); });
+  const linkedActions = state.actions.filter(a => a.linkedIssueId === issue.id);
+
+  const del = () => {
+    if (!confirm(`Delete ${issue.id}? This cannot be undone.`)) return;
+    update(s => {
+      s.issues = s.issues.filter(i => i.id !== issue.id);
+      for (const a of s.actions) if (a.linkedIssueId === issue.id) a.linkedIssueId = '';
+    });
+    toast('Issue deleted');
+    onBack();
+  };
+
+  return (
+    <>
+      <Breadcrumb items={[
+        { label: 'Dashboard' },
+        { label: 'Issues', onClick: onBack },
+        { label: issue.id },
+      ]} />
+
+      <div className="row gap-sm" style={{ marginBottom: 10 }}>
+        <button className="btn btn-sm btn-ghost" onClick={onBack}>← Back</button>
+        <span className="spacer" />
+        <button className="btn btn-sm btn-danger" onClick={del}>Delete</button>
+      </div>
+
+      <div className="detail-head">
+        <div className="left">
+          <div className="breadcrumb"><span>{issue.id}</span></div>
+          <div className="title"><span>{issue.title}</span></div>
+          <div className="meta">
+            <span>Source <b>{issue.source}</b></span>
+            <span>Identified <b className="num">{formatDate(issue.identifiedDate)}</b></span>
+            <span>Due <b className="num">{formatDate(issue.dueDate)}</b> <OverduePill date={issue.status === 'Closed' ? null : issue.dueDate} /></span>
+          </div>
+        </div>
+        <div className="right">
+          <SeverityChip severity={issue.severity} />
+          <WorkStatusChip status={issue.status} />
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-title"><span className="accent-dot" /> Details</div>
+        <div className="form-grid">
+          <div className="field span-2">
+            <span className="field-label">Title</span>
+            <input className="input" value={issue.title} onChange={e => set({ title: e.target.value })} />
+          </div>
+          <div className="field">
+            <span className="field-label">Severity</span>
+            <select className="select" value={issue.severity} onChange={e => set({ severity: e.target.value })}>
+              {ISSUE_SEVERITIES.map(s => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <span className="field-label">Type</span>
+            <select className="select" value={issue.type} onChange={e => set({ type: e.target.value })}>
+              {ISSUE_TYPES.map(s => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <span className="field-label">Source</span>
+            <select className="select" value={issue.source} onChange={e => set({ source: e.target.value })}>
+              {ISSUE_SOURCES.map(s => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <span className="field-label">Status</span>
+            <select className="select" value={issue.status} onChange={e => set({ status: e.target.value })}>
+              {ISSUE_STATUSES.map(s => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <span className="field-label">Owner</span>
+            <input className="input" value={issue.owner} onChange={e => set({ owner: e.target.value })} placeholder="Unassigned" />
+          </div>
+          <div className="field">
+            <span className="field-label">Team</span>
+            <input className="input" value={issue.team} onChange={e => set({ team: e.target.value })} placeholder="e.g. BSA/AML" />
+          </div>
+          <div className="field">
+            <span className="field-label">Due date</span>
+            <input className="input" type="date" value={issue.dueDate || ''} onChange={e => set({ dueDate: e.target.value })} />
+          </div>
+          <div className="field span-2">
+            <span className="field-label">Description</span>
+            <textarea className="textarea" value={issue.description} onChange={e => set({ description: e.target.value })} />
+          </div>
+        </div>
+      </div>
+
+      <div className="dash-grid">
+        <div className="card">
+          <div className="card-title"><span className="accent-dot" /> Linked risk units</div>
+          <LinkPicker
+            value={issue.linkedRiskUnits || []}
+            onChange={(v) => set({ linkedRiskUnits: v })}
+            options={state.riskUnits.map(u => ({ id: u.id, label: `${u.id} · ${u.riskCategoryId} × ${state.products.find(p => p.id === u.productId)?.name}` }))}
+            placeholder="Add risk unit"
+            onClick={openUnit}
+          />
+        </div>
+        <div className="card">
+          <div className="card-title"><span className="accent-dot" /> Linked controls</div>
+          <LinkPicker
+            value={issue.linkedControls || []}
+            onChange={(v) => set({ linkedControls: v })}
+            options={state.controls.map(c => ({ id: c.id, label: `${c.id} · ${c.name}` }))}
+            placeholder="Add control"
+            onClick={openControl}
+          />
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-title" style={{ alignItems:'center', justifyContent:'space-between', display:'flex' }}>
+          <span><span className="accent-dot" /> Remediation actions</span>
+          <button className="btn btn-sm btn-primary" onClick={onNewAction}>+ Add action</button>
+        </div>
+        {linkedActions.length === 0
+          ? <div className="empty" style={{ padding: 20 }}>No actions linked to this issue yet.</div>
+          : (
+            <table className="lc-table">
+              <thead>
+                <tr><th>Ref</th><th>Title</th><th>Owner</th><th>Due</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                {linkedActions.map(a => (
+                  <tr key={a.id} className="click" onClick={() => openAction(a.id)}>
+                    <td className="num" style={{ color:'var(--accent)' }}>{a.id}</td>
+                    <td>{a.title}</td>
+                    <td className="muted">{a.owner || '—'}</td>
+                    <td className="num">{formatDate(a.dueDate)} <OverduePill date={['Completed','Cancelled'].includes(a.status) ? null : a.dueDate} /></td>
+                    <td><WorkStatusChip status={a.status} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+      </div>
+
+      <UpdatesPanel
+        updates={issue.updates}
+        defaultAuthor={issue.owner || 'admin'}
+        onPost={(u) => update(s => { s.issues[idx].updates = [...(s.issues[idx].updates || []), u]; })}
+        onDelete={(uid) => update(s => { s.issues[idx].updates = (s.issues[idx].updates || []).filter(x => x.id !== uid); })}
+      />
+    </>
+  );
+}
+
+function NewIssueModal({ state, defaultRiskUnitId, onClose, onCreate }) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [severity, setSeverity] = useState('Medium');
+  const [type, setType] = useState('Finding');
+  const [source, setSource] = useState('Self-identified');
+  const [owner, setOwner] = useState('');
+  const [team, setTeam] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const linkedRiskUnits = defaultRiskUnitId ? [defaultRiskUnitId] : [];
+  return (
+    <Modal
+      title="New issue"
+      onClose={onClose}
+      actions={[
+        <button key="c" className="btn" onClick={onClose}>Cancel</button>,
+        <button key="ok" className="btn btn-primary" disabled={!title.trim()} onClick={() => onCreate({
+          title, description, severity, type, source, status: 'Open',
+          owner, team, dueDate, linkedRiskUnits, linkedControls: [], notes: '',
+        })}>Create</button>,
+      ]}
+    >
+      <div className="form-grid">
+        <div className="field span-2">
+          <span className="field-label">Title</span>
+          <input className="input" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Mule false-positive rate above tolerance" />
+        </div>
+        <div className="field">
+          <span className="field-label">Severity</span>
+          <select className="select" value={severity} onChange={e => setSeverity(e.target.value)}>{ISSUE_SEVERITIES.map(s => <option key={s}>{s}</option>)}</select>
+        </div>
+        <div className="field">
+          <span className="field-label">Type</span>
+          <select className="select" value={type} onChange={e => setType(e.target.value)}>{ISSUE_TYPES.map(s => <option key={s}>{s}</option>)}</select>
+        </div>
+        <div className="field">
+          <span className="field-label">Source</span>
+          <select className="select" value={source} onChange={e => setSource(e.target.value)}>{ISSUE_SOURCES.map(s => <option key={s}>{s}</option>)}</select>
+        </div>
+        <div className="field">
+          <span className="field-label">Due date</span>
+          <input className="input" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+        </div>
+        <div className="field">
+          <span className="field-label">Owner</span>
+          <input className="input" value={owner} onChange={e => setOwner(e.target.value)} />
+        </div>
+        <div className="field">
+          <span className="field-label">Team</span>
+          <input className="input" value={team} onChange={e => setTeam(e.target.value)} />
+        </div>
+        <div className="field span-2">
+          <span className="field-label">Description</span>
+          <textarea className="textarea" value={description} onChange={e => setDescription(e.target.value)} />
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function ActionsView({ state, onOpen, onNew }) {
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('Active');
+  const [team, setTeam] = useState('');
+  const [sort, setSort] = useState({ key:'due', dir:'asc' });
+  const teams = useMemo(() => [...new Set(state.actions.map(a => a.team).filter(Boolean))], [state.actions]);
+
+  const rows = useMemo(() => {
+    let r = state.actions.filter(a => {
+      if (status === 'Active' && (a.status === 'Completed' || a.status === 'Cancelled')) return false;
+      else if (status && status !== 'Active' && a.status !== status) return false;
+      if (team && a.team !== team) return false;
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        if (!`${a.id} ${a.title} ${a.owner} ${a.team} ${a.description}`.toLowerCase().includes(q)) return false;
+      }
+      return true;
+    });
+    const d = sort.dir === 'asc' ? 1 : -1;
+    r.sort((a, b) => {
+      switch (sort.key) {
+        case 'id':    return d * a.id.localeCompare(b.id);
+        case 'title': return d * a.title.localeCompare(b.title);
+        case 'due':   return d * (a.dueDate || '').localeCompare(b.dueDate || '');
+        case 'status':return d * a.status.localeCompare(b.status);
+        case 'owner': return d * (a.owner || '').localeCompare(b.owner || '');
+        default:      return 0;
+      }
+    });
+    return r;
+  }, [state.actions, search, status, team, sort]);
+
+  const onSort = (k) => setSort(s => s.key === k ? { key:k, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key:k, dir:'asc' });
+
+  return (
+    <>
+      <div className="view-head">
+        <div>
+          <div className="view-title">Actions</div>
+          <div className="view-sub">{rows.length} of {state.actions.length} · remediation workstreams</div>
+        </div>
+        <button className="btn btn-primary" onClick={onNew}>+ New action</button>
+      </div>
+
+      <div className="filterbar">
+        <span className="label">Filter</span>
+        <input className="input" placeholder="Search id, title, owner…" value={search} onChange={e => setSearch(e.target.value)} />
+        <select className="select" value={status} onChange={e => setStatus(e.target.value)}>
+          <option value="Active">Active (not Completed / Cancelled)</option>
+          <option value="">All</option>
+          {ACTION_STATUSES.map(s => <option key={s}>{s}</option>)}
+        </select>
+        <select className="select" value={team} onChange={e => setTeam(e.target.value)}>
+          <option value="">All teams</option>
+          {teams.map(t => <option key={t}>{t}</option>)}
+        </select>
+      </div>
+
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <SortHeader label="Ref"    k="id"     sort={sort} onSort={onSort} />
+              <SortHeader label="Title"  k="title"  sort={sort} onSort={onSort} />
+              <SortHeader label="Owner"  k="owner"  sort={sort} onSort={onSort} />
+              <th>Team</th>
+              <SortHeader label="Status" k="status" sort={sort} onSort={onSort} />
+              <SortHeader label="Due"    k="due"    sort={sort} onSort={onSort} />
+              <th>Issue</th>
+              <th>Risk</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr><td colSpan={8} className="empty">No actions match your filters. <button className="btn btn-sm btn-primary" style={{ marginLeft: 8 }} onClick={onNew}>+ Create your first action</button></td></tr>
+            ) : rows.map(a => (
+              <tr key={a.id} className="click" onClick={() => onOpen(a.id)}>
+                <td className="num" style={{ color:'var(--accent)', fontWeight:600 }}>{a.id}</td>
+                <td>
+                  <div className="two-line">
+                    <span className="top">{a.title}</span>
+                    <span className="bot" style={{ color:'var(--muted)', fontFamily:'var(--sans)', fontSize:12 }}>{a.description?.slice(0,80)}{a.description?.length > 80 ? '…' : ''}</span>
+                  </div>
+                </td>
+                <td>{a.owner || <span className="muted">—</span>}</td>
+                <td className="muted">{a.team || '—'}</td>
+                <td><WorkStatusChip status={a.status} /></td>
+                <td className="num">{formatDate(a.dueDate)} <OverduePill date={['Completed','Cancelled'].includes(a.status) ? null : a.dueDate} /></td>
+                <td className="muted num">{a.linkedIssueId || '—'}</td>
+                <td className="muted num">{(a.linkedRiskUnitIds || []).join(', ') || '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+function ActionDetailView({ state, update, actionId, onBack, openIssue, openUnit, toast }) {
+  const idx = state.actions.findIndex(a => a.id === actionId);
+  const action = state.actions[idx];
+  if (!action) return <div className="empty">Action not found. <button className="btn btn-sm" onClick={onBack}>Back</button></div>;
+  const set = (patch) => update(s => { Object.assign(s.actions[idx], patch); });
+  const parentIssue = state.issues.find(i => i.id === action.linkedIssueId);
+  const del = () => {
+    if (!confirm(`Delete ${action.id}? This cannot be undone.`)) return;
+    update(s => { s.actions = s.actions.filter(a => a.id !== action.id); });
+    toast('Action deleted');
+    onBack();
+  };
+  const overdue = !['Completed','Cancelled'].includes(action.status) && isOverdue(action.dueDate);
+
+  return (
+    <>
+      <Breadcrumb items={[
+        { label:'Dashboard' },
+        { label:'Actions', onClick: onBack },
+        ...(parentIssue ? [{ label: parentIssue.id, onClick: () => openIssue(parentIssue.id) }] : []),
+        { label: action.id },
+      ]} />
+
+      <div className="row gap-sm" style={{ marginBottom: 10 }}>
+        <button className="btn btn-sm btn-ghost" onClick={onBack}>← Back</button>
+        <span className="spacer" />
+        <button className="btn btn-sm btn-danger" onClick={del}>Delete</button>
+      </div>
+
+      <div className="detail-head">
+        <div className="left">
+          <div className="breadcrumb"><span>{action.id}</span></div>
+          <div className="title"><span>{action.title}</span></div>
+          <div className="meta">
+            <span>Owner <b>{action.owner || 'Unassigned'}</b></span>
+            <span>Team <b>{action.team || '—'}</b></span>
+            <span>Due <b className="num">{formatDate(action.dueDate)}</b> {overdue && <OverduePill date={action.dueDate} />}</span>
+            <span>Created <b className="num">{formatDate(action.createdDate)}</b></span>
+          </div>
+        </div>
+        <div className="right">
+          <WorkStatusChip status={action.status} />
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-title"><span className="accent-dot" /> Details</div>
+        <div className="form-grid">
+          <div className="field span-2">
+            <span className="field-label">Title</span>
+            <input className="input" value={action.title} onChange={e => set({ title: e.target.value })} />
+          </div>
+          <div className="field">
+            <span className="field-label">Status</span>
+            <select className="select" value={action.status} onChange={e => set({ status: e.target.value })}>
+              {ACTION_STATUSES.map(s => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <span className="field-label">Owner</span>
+            <input className="input" value={action.owner} onChange={e => set({ owner: e.target.value })} />
+          </div>
+          <div className="field">
+            <span className="field-label">Team</span>
+            <input className="input" value={action.team} onChange={e => set({ team: e.target.value })} />
+          </div>
+          <div className="field">
+            <span className="field-label">Due date</span>
+            <input className="input" type="date" value={action.dueDate || ''} onChange={e => set({ dueDate: e.target.value })} />
+          </div>
+          <div className="field span-2">
+            <span className="field-label">Description</span>
+            <textarea className="textarea" value={action.description} onChange={e => set({ description: e.target.value })} />
+          </div>
+        </div>
+      </div>
+
+      <div className="dash-grid">
+        <div className="card">
+          <div className="card-title"><span className="accent-dot" /> Parent issue</div>
+          {parentIssue ? (
+            <button className="link-text" onClick={() => openIssue(parentIssue.id)} style={{ textAlign:'left' }}>
+              <div className="row gap-sm">
+                <span className="chip tag">{parentIssue.id}</span>
+                <SeverityChip severity={parentIssue.severity} />
+              </div>
+              <div style={{ marginTop: 6 }}>{parentIssue.title}</div>
+            </button>
+          ) : (
+            <div className="muted" style={{ fontSize: 12.5 }}>No parent issue linked. Pick one:</div>
+          )}
+          <select
+            className="select" value={action.linkedIssueId || ''} style={{ marginTop: 8, maxWidth: 360 }}
+            onChange={(e) => set({ linkedIssueId: e.target.value })}
+          >
+            <option value="">— No issue —</option>
+            {state.issues.map(i => <option key={i.id} value={i.id}>{i.id} · {i.title}</option>)}
+          </select>
+        </div>
+        <div className="card">
+          <div className="card-title"><span className="accent-dot" /> Linked risk units</div>
+          <LinkPicker
+            value={action.linkedRiskUnitIds || []}
+            onChange={(v) => set({ linkedRiskUnitIds: v })}
+            options={state.riskUnits.map(u => ({ id: u.id, label: `${u.id} · ${u.riskCategoryId} × ${state.products.find(p => p.id === u.productId)?.name}` }))}
+            placeholder="Add risk unit"
+            onClick={openUnit}
+          />
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-title"><span className="accent-dot" /> Evidence / attachments</div>
+        <div className="evidence-empty">
+          <span className="muted">No files attached yet.</span>
+          <button className="btn btn-sm" disabled title="Coming soon">Upload</button>
+        </div>
+      </div>
+
+      <UpdatesPanel
+        updates={action.updates}
+        defaultAuthor={action.owner || 'admin'}
+        onPost={(u) => update(s => { s.actions[idx].updates = [...(s.actions[idx].updates || []), u]; })}
+        onDelete={(uid) => update(s => { s.actions[idx].updates = (s.actions[idx].updates || []).filter(x => x.id !== uid); })}
+      />
+    </>
+  );
+}
+
+function NewActionModal({ state, defaultIssueId, defaultRiskUnitId, onClose, onCreate }) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [status, setStatus] = useState('Not Started');
+  const [owner, setOwner] = useState('');
+  const [team, setTeam] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [linkedIssueId, setLinkedIssueId] = useState(defaultIssueId || '');
+  const linkedRiskUnitIds = defaultRiskUnitId ? [defaultRiskUnitId] : [];
+  return (
+    <Modal
+      title="New action"
+      onClose={onClose}
+      actions={[
+        <button key="c" className="btn" onClick={onClose}>Cancel</button>,
+        <button key="ok" className="btn btn-primary" disabled={!title.trim()} onClick={() => onCreate({
+          title, description, status, owner, team, dueDate, linkedIssueId, linkedRiskUnitIds, notes: '',
+        })}>Create</button>,
+      ]}
+    >
+      <div className="form-grid">
+        <div className="field span-2">
+          <span className="field-label">Title</span>
+          <input className="input" value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Retune mule-typology detector thresholds" />
+        </div>
+        <div className="field">
+          <span className="field-label">Status</span>
+          <select className="select" value={status} onChange={e => setStatus(e.target.value)}>{ACTION_STATUSES.map(s => <option key={s}>{s}</option>)}</select>
+        </div>
+        <div className="field">
+          <span className="field-label">Due date</span>
+          <input className="input" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+        </div>
+        <div className="field">
+          <span className="field-label">Owner</span>
+          <input className="input" value={owner} onChange={e => setOwner(e.target.value)} />
+        </div>
+        <div className="field">
+          <span className="field-label">Team</span>
+          <input className="input" value={team} onChange={e => setTeam(e.target.value)} />
+        </div>
+        <div className="field span-2">
+          <span className="field-label">Parent issue</span>
+          <select className="select" value={linkedIssueId} onChange={e => setLinkedIssueId(e.target.value)}>
+            <option value="">— No issue —</option>
+            {state.issues.map(i => <option key={i.id} value={i.id}>{i.id} · {i.title}</option>)}
+          </select>
+        </div>
+        <div className="field span-2">
+          <span className="field-label">Description</span>
+          <textarea className="textarea" value={description} onChange={e => setDescription(e.target.value)} />
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function ControlDetailView({ state, update, controlId, units, onBack, openUnit, openIssue, toast }) {
+  const idx = state.controls.findIndex(c => c.id === controlId);
+  const ctrl = state.controls[idx];
+  if (!ctrl) return <div className="empty">Control not found. <button className="btn btn-sm" onClick={onBack}>Back</button></div>;
+  const set = (patch) => update(s => { Object.assign(s.controls[idx], patch); });
+
+  const usageRows = useMemo(() => {
+    const out = [];
+    for (const u of units) {
+      const lc = (u.linkedControls || []).find(x => x.controlId === ctrl.id);
+      if (!lc) continue;
+      const ceVal = getCEFromMatrix(lc.DE, lc.OE);
+      out.push({ u, lc, ce: ceVal, ceBand: getCEBand(ceVal) });
+    }
+    return out;
+  }, [units, ctrl.id]);
+
+  const issuesAgainst = state.issues.filter(i => (i.linkedControls || []).includes(ctrl.id));
+
+  return (
+    <>
+      <Breadcrumb items={[
+        { label:'Dashboard' },
+        { label:'Controls', onClick: onBack },
+        { label: ctrl.id },
+      ]} />
+
+      <div className="row gap-sm" style={{ marginBottom: 10 }}>
+        <button className="btn btn-sm btn-ghost" onClick={onBack}>← Back</button>
+      </div>
+
+      <div className="detail-head">
+        <div className="left">
+          <div className="breadcrumb"><span>{ctrl.id}</span></div>
+          <div className="title"><span>{ctrl.name}</span></div>
+          <div className="meta">
+            <span>Type <b>{ctrl.type}</b></span>
+            <span>Nature <b>{ctrl.nature}</b></span>
+            <span>Frequency <b>{ctrl.frequency}</b></span>
+            <span>Owner <b>{ctrl.owner}</b></span>
+          </div>
+        </div>
+        <div className="right">
+          <span className="chip tag">{usageRows.length} risk units</span>
+          <span className="chip tag">{issuesAgainst.length} issues</span>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-title"><span className="accent-dot" /> Details</div>
+        <div className="form-grid">
+          <div className="field span-2">
+            <span className="field-label">Name</span>
+            <input className="input" value={ctrl.name} onChange={e => set({ name: e.target.value })} />
+          </div>
+          <div className="field span-2">
+            <span className="field-label">Description</span>
+            <textarea className="textarea" value={ctrl.desc} onChange={e => set({ desc: e.target.value })} />
+          </div>
+          <div className="field">
+            <span className="field-label">Type</span>
+            <select className="select" value={ctrl.type} onChange={e => set({ type: e.target.value })}>{CONTROL_TYPES.map(t => <option key={t}>{t}</option>)}</select>
+          </div>
+          <div className="field">
+            <span className="field-label">Nature</span>
+            <select className="select" value={ctrl.nature} onChange={e => set({ nature: e.target.value })}>{CONTROL_NATURES.map(t => <option key={t}>{t}</option>)}</select>
+          </div>
+          <div className="field">
+            <span className="field-label">Frequency</span>
+            <select className="select" value={ctrl.frequency} onChange={e => set({ frequency: e.target.value })}>{CONTROL_FREQUENCIES.map(t => <option key={t}>{t}</option>)}</select>
+          </div>
+          <div className="field">
+            <span className="field-label">Owner</span>
+            <select className="select" value={ctrl.owner} onChange={e => set({ owner: e.target.value })}>{CONTROL_OWNERS.map(t => <option key={t}>{t}</option>)}</select>
+          </div>
+          <div className="field span-2">
+            <span className="field-label">Mitigates</span>
+            <MitigatesEditor value={ctrl.mitigates} onChange={(v) => set({ mitigates: v })} categories={state.riskCategories} />
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-title"><span className="accent-dot" /> Risk units using this control</div>
+        {usageRows.length === 0
+          ? <div className="empty" style={{ padding: 20 }}>This control isn't linked to any risk unit yet.</div>
+          : (
+            <table className="lc-table">
+              <thead>
+                <tr><th>Risk unit</th><th>Weight</th><th>DE</th><th>OE</th><th>CE</th><th>Unit residual</th></tr>
+              </thead>
+              <tbody>
+                {usageRows.map(r => (
+                  <tr key={r.u.id} className="click" onClick={() => openUnit(r.u.id)}>
+                    <td>
+                      <div className="two-line">
+                        <span className="top">{r.u.id}</span>
+                        <span className="bot">{r.u.riskCategoryId} · {state.products.find(p => p.id === r.u.productId)?.name}</span>
+                      </div>
+                    </td>
+                    <td className="num">{r.lc.mitigationWeight?.toFixed(2)}</td>
+                    <td className="num">{r.lc.DE}</td>
+                    <td className="num">{r.lc.OE}</td>
+                    <td><Chip kind="ce" band={r.ceBand} value={r.ce} /></td>
+                    <td>{r.u.rrMatrixBand ? <Chip band={r.u.rrMatrixBand} /> : <span className="muted">—</span>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+      </div>
+
+      <div className="card">
+        <div className="card-title"><span className="accent-dot" /> Issues against this control</div>
+        {issuesAgainst.length === 0
+          ? <div className="empty" style={{ padding: 20 }}>No issues reference this control.</div>
+          : (
+            <table className="lc-table">
+              <thead>
+                <tr><th>Ref</th><th>Title</th><th>Severity</th><th>Due</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                {issuesAgainst.map(i => (
+                  <tr key={i.id} className="click" onClick={() => openIssue(i.id)}>
+                    <td className="num" style={{ color:'var(--accent)' }}>{i.id}</td>
+                    <td>{i.title}</td>
+                    <td><SeverityChip severity={i.severity} /></td>
+                    <td className="num">{formatDate(i.dueDate)} <OverduePill date={i.status === 'Closed' ? null : i.dueDate} /></td>
+                    <td><WorkStatusChip status={i.status} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+      </div>
+
+      <UpdatesPanel
+        updates={ctrl.updates}
+        defaultAuthor={ctrl.owner || 'admin'}
+        onPost={(u) => update(s => { s.controls[idx].updates = [...(s.controls[idx].updates || []), u]; })}
+        onDelete={(uid) => update(s => { s.controls[idx].updates = (s.controls[idx].updates || []).filter(x => x.id !== uid); })}
+      />
+    </>
+  );
+}
+
+function ReportsView({ state, units, openUnit, openIssue, openAction, openControl, onExport }) {
+  const [view, setView] = useState(null);
+
+  const downloadJSON = (name, data) => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `kmoney-${name}-${todayISO()}.json`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const counts = {
+    overdueActions: state.actions.filter(a => !['Completed','Cancelled'].includes(a.status) && isOverdue(a.dueDate)).length,
+    soon7Actions:   state.actions.filter(a => !['Completed','Cancelled'].includes(a.status) && dueWithinDays(a.dueDate, 7)).length,
+    soon30Actions:  state.actions.filter(a => !['Completed','Cancelled'].includes(a.status) && dueWithinDays(a.dueDate, 30)).length,
+    overdueIssues:  state.issues.filter(i => i.status !== 'Closed' && isOverdue(i.dueDate)).length,
+    soon7Issues:    state.issues.filter(i => i.status !== 'Closed' && dueWithinDays(i.dueDate, 7)).length,
+    highIssues:     state.issues.filter(i => i.status !== 'Closed' && (i.severity === 'High' || i.severity === 'Critical')).length,
+  };
+
+  if (view === 'controlEff') {
+    const avg = {};
+    for (const u of units) for (const lc of (u.linkedControls || [])) {
+      const v = getCEFromMatrix(lc.DE, lc.OE);
+      if (!Number.isFinite(v)) continue;
+      if (!avg[lc.controlId]) avg[lc.controlId] = { sum:0, n:0 };
+      avg[lc.controlId].sum += v; avg[lc.controlId].n += 1;
+    }
+    const rows = state.controls.map(c => {
+      const a = avg[c.id]; const ce = a && a.n ? round2(a.sum / a.n) : null;
+      return { c, ce, ceBand: ce != null ? getCEBand(ce) : null, n: a?.n || 0 };
+    }).sort((x, y) => (x.ce ?? 99) - (y.ce ?? 99));
+    return (
+      <>
+        <ReportHeader title="Control Effectiveness Dashboard" onBack={() => setView(null)} />
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>Control</th><th>Type</th><th>Owner</th><th>Linked units</th><th>Avg CE</th></tr></thead>
+            <tbody>
+              {rows.map(({ c, ce, ceBand, n }) => (
+                <tr key={c.id} className="click" onClick={() => openControl(c.id)}>
+                  <td>
+                    <div className="two-line"><span className="top">{c.name}</span><span className="bot">{c.id}</span></div>
+                  </td>
+                  <td className="muted">{c.type}</td>
+                  <td className="muted">{c.owner}</td>
+                  <td className="num">{n}</td>
+                  <td>{ce != null ? <Chip kind="ce" band={ceBand} value={ce} /> : <span className="muted">—</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </>
+    );
+  }
+
+  if (view === 'coverage') {
+    const rows = state.riskCategories.map(rc => {
+      const us = units.filter(u => u.riskCategoryId === rc.id);
+      const assessed = us.filter(u => u.status === 'Assessed').length;
+      const irs = us.map(u => u.ir).filter(Number.isFinite);
+      const irMin = irs.length ? Math.min(...irs) : null;
+      const irMax = irs.length ? Math.max(...irs) : null;
+      const rrBands = us.map(u => u.rrMatrixBand).filter(Boolean);
+      const ctrls = new Set();
+      for (const u of us) for (const lc of u.linkedControls) ctrls.add(lc.controlId);
+      const issuesOpen = state.issues.filter(i => i.status !== 'Closed' && i.linkedRiskUnits?.some(rid => us.some(u => u.id === rid))).length;
+      return { rc, units: us.length, assessed, irMin, irMax, rrBands, ctrls: ctrls.size, issuesOpen };
+    });
+    return (
+      <>
+        <ReportHeader title="Risk Category Coverage Report" onBack={() => setView(null)} />
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>Category</th><th>Risk units</th><th>Assessed</th><th>IR range</th><th>RR bands</th><th>Controls mapped</th><th>Open issues</th></tr></thead>
+            <tbody>
+              {rows.map(r => (
+                <tr key={r.rc.id}>
+                  <td><div className="two-line"><span className="top">{r.rc.name}</span><span className="bot">{r.rc.id}</span></div></td>
+                  <td className="num">{r.units}</td>
+                  <td className="num">{r.assessed}</td>
+                  <td className="num">{r.irMin != null ? `${r.irMin.toFixed(2)}–${r.irMax.toFixed(2)}` : '—'}</td>
+                  <td className="row gap-sm" style={{ flexWrap:'wrap' }}>
+                    {[...new Set(r.rrBands)].map(b => <Chip key={b} band={b} />)}
+                  </td>
+                  <td className="num">{r.ctrls}</td>
+                  <td className="num">{r.issuesOpen}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </>
+    );
+  }
+
+  if (view === 'completion') {
+    const rows = units.map(u => {
+      const narr = ['P','C','G','Ch'].every(k => (u.factorNarratives?.[k] || '').trim().length > 0);
+      const links = u.linkedControls.length > 0;
+      const wOk = Math.abs(u.ceWeightSum - 1) < 0.001;
+      const status = u.status === 'Assessed';
+      const score = [narr, links, wOk, status].filter(Boolean).length;
+      return { u, narr, links, wOk, status, score };
+    }).sort((a, b) => a.score - b.score);
+    return (
+      <>
+        <ReportHeader title="Assessment Completion Tracker" onBack={() => setView(null)} />
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>Risk unit</th><th>Narratives</th><th>Controls</th><th>Σ = 1.00</th><th>Status</th><th>Score</th></tr></thead>
+            <tbody>
+              {rows.map(({ u, narr, links, wOk, status, score }) => (
+                <tr key={u.id} className="click" onClick={() => openUnit(u.id)}>
+                  <td><div className="two-line"><span className="top">{u.id}</span><span className="bot">{u.riskCategoryId} · {state.products.find(p => p.id === u.productId)?.name}</span></div></td>
+                  <td>{narr ? <CheckChip on /> : <CheckChip />}</td>
+                  <td>{links ? <CheckChip on /> : <CheckChip />}</td>
+                  <td>{wOk ? <CheckChip on /> : <CheckChip />}</td>
+                  <td>{status ? <CheckChip on /> : <CheckChip />}</td>
+                  <td className="num">{score} / 4</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </>
+    );
+  }
+
+  if (view === 'anomaly') {
+    const out = [];
+    for (const u of units) {
+      if (u.disagree) out.push({ id:u.id, label:`${u.id} · matrix/formula disagree by >1 band`, click:() => openUnit(u.id) });
+      if (u.ceCapped) out.push({ id:u.id, label:`${u.id} · weak-critical-control cap applied (raw=${u.ceRaw?.toFixed(2)})`, click:() => openUnit(u.id) });
+      if (Math.abs(u.ceWeightSum - 1) >= 0.001 && u.linkedControls.length > 0) out.push({ id:u.id, label:`${u.id} · Σ weights = ${u.ceWeightSum.toFixed(2)}`, click:() => openUnit(u.id) });
+    }
+    return (
+      <>
+        <ReportHeader title="Disagree / Anomaly Report" onBack={() => setView(null)} />
+        {out.length === 0
+          ? <div className="empty" style={{ padding: 40 }}>No anomalies detected. The assessment passes integrity checks.</div>
+          : <div className="card">
+              <div className="attn-list">
+                {out.map((x, i) => <button key={i} className="attn-item attn-r-mod" onClick={x.click}><span className="attn-dot" /><span className="attn-label">{x.label}</span></button>)}
+              </div>
+            </div>}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div className="view-head">
+        <div>
+          <div className="view-title">Reports</div>
+          <div className="view-sub">Cross-cutting views and one-click filtered exports</div>
+        </div>
+      </div>
+
+      <div className="dash-grid">
+        <div className="card">
+          <div className="card-title"><span className="accent-dot" /> Interactive reports</div>
+          <div className="report-list">
+            <button className="report-card" onClick={() => setView('controlEff')}>
+              <div className="rc-title">Control Effectiveness Dashboard</div>
+              <div className="rc-sub">Avg CE per control across every linked risk unit</div>
+            </button>
+            <button className="report-card" onClick={() => setView('coverage')}>
+              <div className="rc-title">Risk Category Coverage Report</div>
+              <div className="rc-sub">For each RC: units, assessed, IR range, RR bands, controls, open issues</div>
+            </button>
+            <button className="report-card" onClick={() => setView('completion')}>
+              <div className="rc-title">Assessment Completion Tracker</div>
+              <div className="rc-sub">Narratives, controls linked, Σ weights = 1.00, status Assessed</div>
+            </button>
+            <button className="report-card" onClick={() => setView('anomaly')}>
+              <div className="rc-title">Disagree / Anomaly Report</div>
+              <div className="rc-sub">Matrix vs formula gaps, capped CE, weight violations</div>
+            </button>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-title"><span className="accent-dot" /> Filtered exports</div>
+          <div className="export-list">
+            <ExportButton label="Overdue actions"             count={counts.overdueActions} onClick={() => downloadJSON('overdue-actions',     state.actions.filter(a => !['Completed','Cancelled'].includes(a.status) && isOverdue(a.dueDate)))} />
+            <ExportButton label="Actions due in 7 days"       count={counts.soon7Actions}   onClick={() => downloadJSON('actions-due-7d',      state.actions.filter(a => !['Completed','Cancelled'].includes(a.status) && dueWithinDays(a.dueDate, 7)))} />
+            <ExportButton label="Actions due in 30 days"      count={counts.soon30Actions}  onClick={() => downloadJSON('actions-due-30d',     state.actions.filter(a => !['Completed','Cancelled'].includes(a.status) && dueWithinDays(a.dueDate, 30)))} />
+            <ExportButton label="Overdue issues"              count={counts.overdueIssues}  onClick={() => downloadJSON('overdue-issues',      state.issues.filter(i => i.status !== 'Closed' && isOverdue(i.dueDate)))} />
+            <ExportButton label="Issues due in 7 days"        count={counts.soon7Issues}    onClick={() => downloadJSON('issues-due-7d',       state.issues.filter(i => i.status !== 'Closed' && dueWithinDays(i.dueDate, 7)))} />
+            <ExportButton label="Open High/Critical issues"   count={counts.highIssues}     onClick={() => downloadJSON('open-high-critical-issues', state.issues.filter(i => i.status !== 'Closed' && (i.severity === 'High' || i.severity === 'Critical')))} />
+            <ExportButton label="Full register (everything)"  count={null}                  onClick={onExport} primary />
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ReportHeader({ title, onBack }) {
+  return (
+    <>
+      <Breadcrumb items={[{ label:'Dashboard' }, { label:'Reports', onClick: onBack }, { label: title }]} />
+      <div className="row gap-sm" style={{ marginBottom: 12 }}>
+        <button className="btn btn-sm btn-ghost" onClick={onBack}>← All reports</button>
+        <span className="spacer" />
+        <div className="view-title" style={{ fontSize: 18 }}>{title}</div>
+      </div>
+    </>
+  );
+}
+
+function ExportButton({ label, count, onClick, primary }) {
+  return (
+    <button className={`export-btn ${primary ? 'primary' : ''}`} onClick={onClick}>
+      <span>{label}</span>
+      {count != null && <span className={`export-count ${count > 0 ? 'on' : 'off'}`}>{count}</span>}
+    </button>
+  );
+}
+
+function CheckChip({ on }) {
+  return <span className={`check-chip ${on ? 'on' : ''}`}>{on ? '✓' : '·'}</span>;
+}
+
+
