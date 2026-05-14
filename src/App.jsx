@@ -14,11 +14,11 @@ const DEFAULT_RISK_CATEGORIES = [
 ];
 
 const DEFAULT_PRODUCTS = [
-  { id:'P-01', name:'P2P Transfers',         status:'Live (soft launch)' },
-  { id:'P-02', name:'Visa Debit Card',       status:'Live (soft launch)' },
-  { id:'P-03', name:'Direct Deposit',        status:'Roadmap' },
-  { id:'P-04', name:'High-Yield Interest',   status:'Roadmap' },
-  { id:'P-05', name:'Cashback Rewards',      status:'Roadmap' },
+  { id:'P-01', name:'P2P Transfers',       short:'P2P',         status:'Live (soft launch)' },
+  { id:'P-02', name:'Visa Debit Card',     short:'Visa Debit',  status:'Live (soft launch)' },
+  { id:'P-03', name:'Direct Deposit',      short:'Direct Dep.', status:'Roadmap' },
+  { id:'P-04', name:'High-Yield Interest', short:'High-Yield',  status:'Roadmap' },
+  { id:'P-05', name:'Cashback Rewards',    short:'Cashback',    status:'Roadmap' },
 ];
 
 const PRODUCT_CATEGORIES = {
@@ -131,7 +131,7 @@ const RU_SEEDS = {
       G:'US only at launch.',
       Ch:'Non-face-to-face onboarding; in-feed DM → P2P in seconds; documented bot exposure on parent platform.',
     },
-    c:[['CTRL-001',0.15,3,4],['CTRL-003',0.30,3,4],['CTRL-006',0.15,3,4],['CTRL-010',0.25,4,2],['CTRL-011',0.15,2,2]],
+    c:[['CTRL-001','s',3,4],['CTRL-003','k',3,4],['CTRL-006','s',3,4],['CTRL-010','k',4,2],['CTRL-011','s',2,2]],
     notes:'§5.7 worked example. Re-rated quarterly. Sponsor bank reviewed Q1 2026.',
     upd:[
       ['BSA Officer','Reviewed with sponsor bank counterpart; alignment confirmed for Q1.','2026-03-15T10:00:00'],
@@ -146,7 +146,7 @@ const RU_SEEDS = {
       G:'US-only at launch but cross-border via PEP/RCA second-degree connections; small surface.',
       Ch:'In-feed DM solicitation surface modeled in TM scenarios; bot exposure inherits from RC-01.',
     },
-    c:[['CTRL-002',0.30,4,3],['CTRL-006',0.30,3,4],['CTRL-007',0.40,3,3]],
+    c:[['CTRL-002','k',4,3],['CTRL-006','k',3,4],['CTRL-007','k',3,3]],
   },
   'RC-03_P-01': {
     f:[3.0,3.0,3.0,4.0], owner:'OFAC Officer', status:'Assessed', date:'2026-04-08',
@@ -156,7 +156,7 @@ const RU_SEEDS = {
       G:'US-only but FATF-grey-list device signals observed at ~0.3% — heightened from baseline.',
       Ch:'VPN/proxy heuristics flag ~1.4% of sessions; CTRL-004 blocks the high-confidence subset.',
     },
-    c:[['CTRL-002',0.45,4,4],['CTRL-004',0.30,3,3],['CTRL-006',0.25,3,4]],
+    c:[['CTRL-002','k',4,4],['CTRL-004','k',3,3],['CTRL-006','k',3,4]],
     notes:'Hourly OFAC list refresh in progress (ACT-004). Sponsor bank monitoring weekly.',
     upd:[
       ['OFAC Officer','List refresh cadence reduced to hourly target; see ACT-004.','2026-04-25T09:15:00'],
@@ -170,7 +170,7 @@ const RU_SEEDS = {
       G:'US-only.',
       Ch:'In-feed DM → P2P creates the lowest-friction scam funnel observed in soft launch.',
     },
-    c:[['CTRL-001',0.20,3,4],['CTRL-003',0.30,3,4],['CTRL-005',0.20,3,3],['CTRL-010',0.30,4,2]],
+    c:[['CTRL-001','s',3,4],['CTRL-003','k',3,4],['CTRL-005','s',3,3],['CTRL-010','k',4,2]],
     notes:'Highest priority residual on the program. Two open issues (ISS-001, ISS-007).',
     upd:[
       ['Fraud Lead','Pig-butchering case volume up 12% MoM; not isolated to mule cluster.','2026-04-10T11:00:00'],
@@ -185,7 +185,7 @@ const RU_SEEDS = {
       G:'US-only.',
       Ch:'DM-based grandparent and tech-support scams observed in TM samples.',
     },
-    c:[['CTRL-003',0.35,3,4],['CTRL-013',0.45,3,3],['CTRL-018',0.20,3,3]],
+    c:[['CTRL-003','k',3,4],['CTRL-013','k',3,3],['CTRL-018','s',3,3]],
   },
   'RC-06_P-01': {
     f:[3.0,4.0,2.5,5.0], owner:'BSA Officer', status:'Assessed', date:'2026-04-12',
@@ -195,7 +195,7 @@ const RU_SEEDS = {
       G:'US-only but content originates globally.',
       Ch:'Parent platform Trust & Safety telemetry intermittent — CTRL-011 ramping; high amplification risk.',
     },
-    c:[['CTRL-011',0.55,2,2],['CTRL-012',0.30,3,3],['CTRL-007',0.15,3,3]],
+    c:[['CTRL-011','k',2,2],['CTRL-012','k',3,3],['CTRL-007','s',3,3]],
     notes:'Owner-shared with parent T&S team. Critical to maintain MOU cadence.',
     upd:[
       ['BSA Officer','T&S signal latency continues to be the blocker (ISS-003).','2026-04-30T17:00:00'],
@@ -209,7 +209,7 @@ const RU_SEEDS = {
       G:'US-only.',
       Ch:'In-app dispute flow under redesign; provisional credit timers consistent with Reg E.',
     },
-    c:[['CTRL-008',0.35,3,3],['CTRL-009',0.35,3,3],['CTRL-018',0.30,3,3]],
+    c:[['CTRL-008','k',3,3],['CTRL-009','k',3,3],['CTRL-018','k',3,3]],
   },
   'RC-08_P-01': {
     f:[4.0,4.0,2.0,5.0], owner:'CISO', status:'Assessed', date:'2026-04-18',
@@ -219,7 +219,7 @@ const RU_SEEDS = {
       G:'US-only.',
       Ch:'Mobile + web with no MFA-by-default at signup; step-up only on risky sessions.',
     },
-    c:[['CTRL-001',0.30,3,4],['CTRL-004',0.30,3,3],['CTRL-005',0.40,3,3]],
+    c:[['CTRL-001','k',3,4],['CTRL-004','k',3,3],['CTRL-005','k',3,3]],
     notes:'Behavioral biometrics retrain pending (ACT-011).',
     upd:[
       ['CISO','SIM-swap attempt volume stable; biometrics model drift the larger concern (ISS-011).','2026-04-26T08:45:00'],
@@ -233,7 +233,7 @@ const RU_SEEDS = {
       G:'Sponsor bank US-domiciled; subprocessors limited to US/EU.',
       Ch:'Sponsor bank monthly ops review on cadence; one finding open (ISS-008).',
     },
-    c:[['CTRL-016',0.30,4,3],['CTRL-017',0.50,3,4],['CTRL-019',0.20,3,3]],
+    c:[['CTRL-016','k',4,3],['CTRL-017','k',3,4],['CTRL-019','s',3,3]],
   },
 
   'RC-01_P-02': {
@@ -244,7 +244,7 @@ const RU_SEEDS = {
       G:'US-only acceptance at launch; some international MCC exposure.',
       Ch:'Card-present and card-not-present surfaces both covered by TM.',
     },
-    c:[['CTRL-001',0.25,3,4],['CTRL-003',0.40,3,4],['CTRL-006',0.20,3,4],['CTRL-007',0.15,3,3]],
+    c:[['CTRL-001','k',3,4],['CTRL-003','k',3,4],['CTRL-006','s',3,4],['CTRL-007','s',3,3]],
     notes:'Lower priority than P2P/DD for ML scrutiny.',
     upd:[
       ['BSA Officer','Q1 review uneventful; no scenario changes proposed.','2026-04-01T13:00:00'],
@@ -258,7 +258,7 @@ const RU_SEEDS = {
       G:'US-only; international MCC requests blocked when issuer-country is sanctioned.',
       Ch:'Standard card auth + network rules; no in-feed surface.',
     },
-    c:[['CTRL-002',0.50,4,4],['CTRL-004',0.30,3,3],['CTRL-006',0.20,3,4]],
+    c:[['CTRL-002','k',4,4],['CTRL-004','k',3,3],['CTRL-006','s',3,4]],
   },
   'RC-04_P-02': {
     f:[4.0,3.0,2.0,4.0], owner:'Fraud Lead', status:'Assessed', date:'2026-04-15',
@@ -268,7 +268,7 @@ const RU_SEEDS = {
       G:'US-only.',
       Ch:'CNP transactions are the primary risk surface; chargeback rail provides recovery.',
     },
-    c:[['CTRL-001',0.20,3,4],['CTRL-003',0.30,3,4],['CTRL-005',0.30,3,3],['CTRL-010',0.20,3,3]],
+    c:[['CTRL-001','s',3,4],['CTRL-003','k',3,4],['CTRL-005','k',3,3],['CTRL-010','s',3,3]],
     notes:'Mid-March BIN-attack spike under review (ISS-009).',
     upd:[
       ['Fraud Lead','Containment runbook (ACT-009) ready for tabletop next Thursday.','2026-04-28T10:30:00'],
@@ -282,7 +282,7 @@ const RU_SEEDS = {
       G:'US-only.',
       Ch:'In-app dispute flow + call center; provisional credit SLA met >99% in Q1.',
     },
-    c:[['CTRL-008',0.50,3,3],['CTRL-009',0.25,3,4],['CTRL-018',0.25,3,3]],
+    c:[['CTRL-008','k',3,3],['CTRL-009','k',3,4],['CTRL-018','k',3,3]],
   },
   'RC-08_P-02': {
     f:[3.0,3.0,2.0,4.0], owner:'CISO', status:'Assessed', date:'2026-04-09',
@@ -292,7 +292,7 @@ const RU_SEEDS = {
       G:'US-only.',
       Ch:'Wallet/Apple Pay enrollment is the primary ATO vector; CTRL-005 step-up applied.',
     },
-    c:[['CTRL-001',0.20,3,4],['CTRL-004',0.30,3,3],['CTRL-005',0.50,3,3]],
+    c:[['CTRL-001','s',3,4],['CTRL-004','k',3,3],['CTRL-005','k',3,3]],
   },
   'RC-10_P-02': {
     f:[3.0,2.0,2.0,3.0], owner:'TPRM Lead', status:'Assessed', date:'2026-03-25',
@@ -302,7 +302,7 @@ const RU_SEEDS = {
       G:'Same.',
       Ch:'Quarterly joint risk review covers card-specific topics.',
     },
-    c:[['CTRL-016',0.30,4,3],['CTRL-017',0.50,3,4],['CTRL-019',0.20,3,3]],
+    c:[['CTRL-016','k',4,3],['CTRL-017','k',3,4],['CTRL-019','s',3,3]],
   },
 
   'RC-01_P-03': {
@@ -313,7 +313,7 @@ const RU_SEEDS = {
       G:'US-only.',
       Ch:'ACH operator + originator chain visible; TM rules cover funnel patterns.',
     },
-    c:[['CTRL-001',0.25,3,4],['CTRL-003',0.30,3,4],['CTRL-006',0.25,3,4],['CTRL-007',0.20,3,3]],
+    c:[['CTRL-001','k',3,4],['CTRL-003','k',3,4],['CTRL-006','k',3,4],['CTRL-007','s',3,3]],
     notes:'Roadmap product — pre-launch addendum approved.',
     upd:[
       ['BSA Officer','DD launch dependency on EDD backlog clearance (ISS-008).','2026-04-22T09:00:00'],
@@ -327,7 +327,7 @@ const RU_SEEDS = {
       G:'US-only originators.',
       Ch:'Closed-loop bank-to-bank channel; minimal abuse surface.',
     },
-    c:[['CTRL-002',0.50,4,4],['CTRL-004',0.30,3,3],['CTRL-006',0.20,3,4]],
+    c:[['CTRL-002','k',4,4],['CTRL-004','k',3,3],['CTRL-006','s',3,4]],
   },
   'RC-04_P-03': {
     f:[4.0,4.0,2.0,3.0], owner:'Fraud Lead', status:'Assessed', date:'2026-04-20',
@@ -337,7 +337,7 @@ const RU_SEEDS = {
       G:'US-only.',
       Ch:'In-app DD instruction change is the controlled surface; step-up applied.',
     },
-    c:[['CTRL-001',0.25,3,4],['CTRL-003',0.30,3,4],['CTRL-005',0.25,3,3],['CTRL-010',0.20,3,3]],
+    c:[['CTRL-001','k',3,4],['CTRL-003','k',3,4],['CTRL-005','k',3,3],['CTRL-010','s',3,3]],
     notes:'DD launch gating: step-up coverage gap (ISS-007) must close before public release.',
     upd:[
       ['Fraud Lead','Tax-season postmortem rolled into pre-launch readiness pack.','2026-05-02T15:45:00'],
@@ -351,7 +351,7 @@ const RU_SEEDS = {
       G:'US-only.',
       Ch:'CTRL-008 currently operating sub-target due to volume — issue open (ISS-006).',
     },
-    c:[['CTRL-008',0.45,3,2],['CTRL-009',0.25,3,4],['CTRL-018',0.30,3,3]],
+    c:[['CTRL-008','k',3,2],['CTRL-009','k',3,4],['CTRL-018','k',3,3]],
     notes:'CE rated Needs Improvement until backlog clears.',
     upd:[
       ['Consumer Compliance Lead','Two new analysts join 5/19; backlog burndown plan in ACT-006.','2026-05-08T11:15:00'],
@@ -365,7 +365,7 @@ const RU_SEEDS = {
       G:'US-only.',
       Ch:'Email-channel BEC primarily; in-app + biometrics provide channel separation.',
     },
-    c:[['CTRL-001',0.30,3,4],['CTRL-004',0.30,3,3],['CTRL-005',0.40,3,3]],
+    c:[['CTRL-001','k',3,4],['CTRL-004','k',3,3],['CTRL-005','k',3,3]],
     notes:'See ISS-007 for legacy-iOS step-up gap.',
     upd:[
       ['CISO','Legacy iOS deprecation timeline accelerated; ACT-007 on track.','2026-04-29T13:20:00'],
@@ -379,7 +379,7 @@ const RU_SEEDS = {
       G:'US-only.',
       Ch:'Same quarterly cadence as P-02.',
     },
-    c:[['CTRL-016',0.30,4,3],['CTRL-017',0.50,3,4],['CTRL-019',0.20,3,3]],
+    c:[['CTRL-016','k',4,3],['CTRL-017','k',3,4],['CTRL-019','s',3,3]],
   },
 
   'RC-07_P-04': {
@@ -390,7 +390,7 @@ const RU_SEEDS = {
       G:'US-only.',
       Ch:'In-app marketing copy is the primary disclosure surface; gate is CTRL-009.',
     },
-    c:[['CTRL-009',0.55,4,3],['CTRL-008',0.20,3,3],['CTRL-018',0.25,3,3]],
+    c:[['CTRL-009','k',4,3],['CTRL-008','s',3,3],['CTRL-018','k',3,3]],
     notes:'Senate Banking Committee letter referenced explicitly. Top-of-mind for the CCO.',
     upd:[
       ['CCO','Marketing copy v3 in sponsor-bank legal review; targeting 5/15 sign-off.','2026-05-04T16:00:00'],
@@ -405,7 +405,7 @@ const RU_SEEDS = {
       G:'US-only.',
       Ch:'Sponsor bank financial-health attestation quarterly.',
     },
-    c:[['CTRL-016',0.30,4,3],['CTRL-017',0.50,3,4],['CTRL-019',0.20,3,3]],
+    c:[['CTRL-016','k',4,3],['CTRL-017','k',3,4],['CTRL-019','s',3,3]],
   },
 
   'RC-04_P-05': {
@@ -416,7 +416,7 @@ const RU_SEEDS = {
       G:'US-only.',
       Ch:'In-app referral surface is the primary abuse vector.',
     },
-    c:[['CTRL-003',0.40,3,3],['CTRL-005',0.30,3,3],['CTRL-010',0.30,3,3]],
+    c:[['CTRL-003','k',3,3],['CTRL-005','k',3,3],['CTRL-010','k',3,3]],
     notes:'Pre-launch draft. Promo-engine team owns abuse-rule design.',
     upd:[
       ['Fraud Lead','Abuse-rule v1 baseline FPR ~6%, targeting <3% before launch.','2026-05-07T14:00:00'],
@@ -430,7 +430,7 @@ const RU_SEEDS = {
       G:'US-only.',
       Ch:'In-app T&Cs surface; legal review pending.',
     },
-    c:[['CTRL-008',0.30,3,3],['CTRL-009',0.40,3,4],['CTRL-018',0.30,3,3]],
+    c:[['CTRL-008','k',3,3],['CTRL-009','k',3,4],['CTRL-018','k',3,3]],
   },
 };
 
@@ -460,8 +460,10 @@ function makeDefaultRiskUnits() {
         lastUpdated: seed.date,
         factorScores:{ P:seed.f[0], C:seed.f[1], G:seed.f[2], Ch:seed.f[3] },
         factorNarratives: seed.n,
-        linkedControls: (seed.c || []).map(([cid, w, de, oe]) => ({
-          controlId: cid, mitigationWeight: w, DE: de, OE: oe,
+        linkedControls: (seed.c || []).map(([cid, t, de, oe]) => ({
+          controlId: cid,
+          tier: t === 'k' ? 'key' : 'supporting',
+          DE: de, OE: oe,
         })),
         updates: (seed.upd || []).map(([author, text, date], i) => ({
           id:`upd-${id}-${i+1}`, author, text, date,
@@ -473,7 +475,28 @@ function makeDefaultRiskUnits() {
 }
 
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+const round3 = (n) => Math.round((n + Number.EPSILON) * 1000) / 1000;
 const clamp  = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
+
+const productSuffix = (pid) => {
+  if (!pid) return '';
+  const m = /(\d+)/.exec(pid);
+  return m ? m[1].padStart(2, '0') : '';
+};
+const rcRefCode = (rcId, pid) => `${rcId || ''}-${productSuffix(pid)}`;
+const ruRefCode = (unit) => unit ? rcRefCode(unit.riskCategoryId, unit.productId) : '';
+
+function computeControlWeights(linked) {
+  const out = (linked || []).map(l => ({ ...l }));
+  const K = out.filter(l => l.tier === 'key').length;
+  const S = out.filter(l => l.tier !== 'key').length;
+  const denom = 2 * K + S;
+  if (denom === 0) { out.forEach(l => { l.weight = 0; }); return out; }
+  const wk = 2 / denom;
+  const ws = 1 / denom;
+  for (const l of out) l.weight = l.tier === 'key' ? wk : ws;
+  return out;
+}
 
 function calcIR(scores, weights) {
   return round2(weights.P*scores.P + weights.C*scores.C + weights.G*scores.G + weights.Ch*scores.Ch);
@@ -503,20 +526,21 @@ function getCEBand(ce) {
 }
 
 function calcAggregateCE(linked, settings) {
-  if (!linked || linked.length === 0) return { value:null, raw:null, band:null, capped:false, weightSum:0 };
-  let weightSum = 0;
-  const valid = linked.filter(l => Number.isFinite(getCEFromMatrix(l.DE, l.OE)) && (Number(l.mitigationWeight)||0) > 0);
-  for (const l of linked) weightSum += Number(l.mitigationWeight) || 0;
-  if (valid.length === 0) return { value:null, raw:null, band:null, capped:false, weightSum:round2(weightSum) };
+  const weighted = computeControlWeights(linked);
+  const weightSum = round2(weighted.reduce((s, l) => s + (l.weight || 0), 0));
+  if (weighted.length === 0) return { value:null, raw:null, band:null, capped:false, weightSum, perControl: [] };
 
-  const raw = round2(valid.reduce((s, l) => s + (Number(l.mitigationWeight)||0) * getCEFromMatrix(l.DE, l.OE), 0));
-  const trigger = linked.some(l =>
-    (Number(l.mitigationWeight)||0) > settings.weakCriticalThreshold &&
+  const valid = weighted.filter(l => Number.isFinite(getCEFromMatrix(l.DE, l.OE)));
+  if (valid.length === 0) return { value:null, raw:null, band:null, capped:false, weightSum, perControl: weighted };
+
+  const raw = round2(valid.reduce((s, l) => s + l.weight * getCEFromMatrix(l.DE, l.OE), 0));
+  const trigger = weighted.some(l =>
+    l.weight > settings.weakCriticalThreshold &&
     getCEFromMatrix(l.DE, l.OE) < settings.weakCriticalCELimit
   );
   const capped = trigger && raw > settings.weakCriticalCap;
   const value = capped ? settings.weakCriticalCap : raw;
-  return { value:round2(value), raw, band:getCEBand(value), capped, weightSum:round2(weightSum) };
+  return { value:round2(value), raw, band:getCEBand(value), capped, weightSum, perControl: weighted };
 }
 
 const IR_BAND_INDEX = ['Severe','High','Moderate','Low-Moderate','Low'];
@@ -577,6 +601,12 @@ function migrate(s) {
   for (const u of s.riskUnits || []) {
     if (!Array.isArray(u.updates)) u.updates = [];
     if (u.notes == null) u.notes = '';
+    for (const lc of (u.linkedControls || [])) {
+      if (lc.tier == null) {
+        lc.tier = (Number(lc.mitigationWeight) || 0) >= 0.25 ? 'key' : 'supporting';
+      }
+      delete lc.mitigationWeight;
+    }
   }
   for (const c of s.controls || []) {
     if (!Array.isArray(c.updates)) c.updates = [];
@@ -970,11 +1000,18 @@ function FactorCard({ keyName, score, narrative, weight, onScore, onNarrative })
       </div>
       <div className="factor-row">
         <input
-          type="range" min="1" max="5" step="0.1"
+          type="range" min="1" max="5" step="0.5"
           value={score}
           onChange={(e) => onScore(parseFloat(e.target.value))}
+          list={`factor-ticks-${keyName}`}
         />
+        <datalist id={`factor-ticks-${keyName}`}>
+          {[1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map(v => <option key={v} value={v} />)}
+        </datalist>
         <div className="factor-score">{Number(score).toFixed(1)}</div>
+      </div>
+      <div className="factor-ticks">
+        {[1, 2, 3, 4, 5].map(v => <span key={v}>{v}</span>)}
       </div>
       <div className="row gap-sm" style={{ marginBottom: 6 }}>
         <Chip band={bgBand} />
@@ -1071,7 +1108,7 @@ export default function App() {
   const [selectedIssueId, setSelectedIssueId] = useState(null);
   const [selectedActionId, setSelectedActionId] = useState(null);
   const [selectedControlId, setSelectedControlId] = useState(null);
-  const [filters, setFilters] = useState({ category:'', product:'', rrBand:'', search:'', status:'', unassessed:false, weightBad:false });
+  const [filters, setFilters] = useState({ category:'', product:'', rrBand:'', search:'', status:'', unassessed:false });
   const [sort, setSort] = useState({ key:'rr', dir:'desc' });
   const [newUnitOpen, setNewUnitOpen] = useState(false);
   const [newIssueOpen, setNewIssueOpen] = useState(false);
@@ -1106,6 +1143,7 @@ export default function App() {
         ...u,
         ir, irBand,
         ce: agg.value, ceRaw: agg.raw, ceBand: agg.band, ceCapped: agg.capped, ceWeightSum: agg.weightSum,
+        weighted: agg.perControl,
         rrMatrixBand, rrFormula, rrFormulaBand, disagree,
       };
     });
@@ -1119,7 +1157,6 @@ export default function App() {
       if (filters.rrBand && u.rrMatrixBand !== filters.rrBand) return false;
       if (filters.status && u.status !== filters.status) return false;
       if (filters.unassessed && !(u.status === 'Draft' && u.linkedControls.length === 0)) return false;
-      if (filters.weightBad && Math.abs(u.ceWeightSum - 1) < 0.001) return false;
       if (q) {
         const cat = getCat(u.riskCategoryId);
         const prod = getProd(u.productId);
@@ -1177,7 +1214,7 @@ export default function App() {
   const overdueIssues  = useMemo(() => state.issues.filter(i => i.status !== 'Closed' && isOverdue(i.dueDate)).length, [state.issues]);
   const overdueActions = useMemo(() => state.actions.filter(a => a.status !== 'Completed' && a.status !== 'Cancelled' && isOverdue(a.dueDate)).length, [state.actions]);
 
-  const goRegister = (patch = {}) => { setFilters(f => ({ category:'', product:'', rrBand:'', search:'', status:'', unassessed:false, weightBad:false, ...patch })); setTab('register'); setSelectedUnitId(null); setSelectedIssueId(null); setSelectedActionId(null); setSelectedControlId(null); };
+  const goRegister = (patch = {}) => { setFilters(f => ({ category:'', product:'', rrBand:'', search:'', status:'', unassessed:false, ...patch })); setTab('register'); setSelectedUnitId(null); setSelectedIssueId(null); setSelectedActionId(null); setSelectedControlId(null); };
   const goTab = (key) => { setTab(key); setSelectedUnitId(null); setSelectedIssueId(null); setSelectedActionId(null); setSelectedControlId(null); };
   const openUnit    = (id) => { setSelectedUnitId(id); setSelectedIssueId(null); setSelectedActionId(null); setSelectedControlId(null); };
   const openIssue   = (id) => { setSelectedIssueId(id); setSelectedUnitId(null); setSelectedActionId(null); setSelectedControlId(null); setTab('issues'); };
@@ -1437,7 +1474,7 @@ function DetailView({ state, update, unit, onBack, onAlpha, openControl, openIss
   const addLC = () => update(s => {
     const used = new Set(s.riskUnits[idx].linkedControls.map(l => l.controlId));
     const next = s.controls.find(c => !used.has(c.id));
-    s.riskUnits[idx].linkedControls.push({ controlId: next?.id || s.controls[0]?.id || '', mitigationWeight: 0, DE: 3, OE: 3 });
+    s.riskUnits[idx].linkedControls.push({ controlId: next?.id || s.controls[0]?.id || '', tier: 'supporting', DE: 3, OE: 3 });
   });
   const removeLC = (i) => update(s => {
     s.riskUnits[idx].linkedControls.splice(i, 1);
@@ -1453,6 +1490,8 @@ function DetailView({ state, update, unit, onBack, onAlpha, openControl, openIss
   const fs = unit.factorScores;
   const irExpr = `${w.P}·${fs.P.toFixed(1)} + ${w.C}·${fs.C.toFixed(1)} + ${w.G}·${fs.G.toFixed(1)} + ${w.Ch}·${fs.Ch.toFixed(1)}`;
 
+  const weightedLinked = computeControlWeights(raw.linkedControls);
+
   const linkedIssues  = state.issues.filter(i => (i.linkedRiskUnits || []).includes(unit.id));
   const linkedActions = state.actions.filter(a => (a.linkedRiskUnitIds || []).includes(unit.id));
 
@@ -1461,7 +1500,7 @@ function DetailView({ state, update, unit, onBack, onAlpha, openControl, openIss
       <Breadcrumb items={[
         { label:'Dashboard' },
         { label:'Register', onClick: onBack },
-        { label: cat?.id },
+        { label: ruRefCode(unit) },
         { label: prod?.name },
         { label: unit.id },
       ]} />
@@ -1477,12 +1516,12 @@ function DetailView({ state, update, unit, onBack, onAlpha, openControl, openIss
           <div className="breadcrumb">
             <span>{unit.id}</span>
             <span className="sep">/</span>
-            <span>{cat?.id}</span>
+            <span>{ruRefCode(unit)}</span>
             <span className="sep">/</span>
             <span>{prod?.name}</span>
           </div>
           <div className="title">
-            <span className="code">{cat?.id}</span>
+            <span className="code">{ruRefCode(unit)}</span>
             <span>{cat?.name}</span>
             <span className="muted" style={{ fontSize: 14, fontWeight: 400 }}>×</span>
             <span>{prod?.name}</span>
@@ -1538,6 +1577,7 @@ function DetailView({ state, update, unit, onBack, onAlpha, openControl, openIss
           <thead>
             <tr>
               <th className="col-id">Control</th>
+              <th className="col-tier">Tier</th>
               <th className="col-w">Weight</th>
               <th className="col-de">Design Effectiveness</th>
               <th className="col-oe">Operating Effectiveness</th>
@@ -1547,9 +1587,9 @@ function DetailView({ state, update, unit, onBack, onAlpha, openControl, openIss
           </thead>
           <tbody>
             {raw.linkedControls.length === 0 && (
-              <tr><td colSpan={6} className="empty" style={{ padding: 24 }}>No controls linked yet — click "Add control" to start.</td></tr>
+              <tr><td colSpan={7} className="empty" style={{ padding: 24 }}>No controls linked yet — click "Add control" to start.</td></tr>
             )}
-            {raw.linkedControls.map((lc, i) => {
+            {weightedLinked.map((lc, i) => {
               const ctrl = state.controls.find(c => c.id === lc.controlId);
               const ceVal = getCEFromMatrix(lc.DE, lc.OE);
               const ceB = getCEBand(ceVal);
@@ -1562,13 +1602,17 @@ function DetailView({ state, update, unit, onBack, onAlpha, openControl, openIss
                     {!ctrl && <span className="de-oe-help" style={{ color: 'var(--r-sev)' }}>Control was removed; pick another.</span>}
                   </td>
                   <td>
-                    <input
-                      type="number" min="0" max="1" step="0.05"
-                      className="input num-in"
-                      value={lc.mitigationWeight}
-                      onChange={(e) => updateLC(i, { mitigationWeight: parseFloat(e.target.value) || 0 })}
-                    />
+                    <select
+                      className="select"
+                      value={lc.tier || 'supporting'}
+                      onChange={(e) => updateLC(i, { tier: e.target.value })}
+                      title="Key controls receive twice the weight of supporting controls"
+                    >
+                      <option value="key">Key</option>
+                      <option value="supporting">Supporting</option>
+                    </select>
                   </td>
+                  <td className="num" style={{ fontSize: 13 }}>{round3(lc.weight).toFixed(3)}</td>
                   <td>
                     <DEOESelect value={lc.DE} options={DE_OPTIONS} ariaLabel="Design effectiveness" onChange={(v) => updateLC(i, { DE: v })} />
                   </td>
@@ -1585,9 +1629,8 @@ function DetailView({ state, update, unit, onBack, onAlpha, openControl, openIss
         <div className="row" style={{ marginTop: 12 }}>
           <button className="btn btn-sm btn-primary" onClick={addLC}>+ Add control</button>
           <span className="spacer" />
-          <span className={`weight-status ${Math.abs(unit.ceWeightSum - 1.0) < 0.001 ? 'ok' : 'bad'}`}>
-            Σ weights = <span className="num">{(unit.ceWeightSum || 0).toFixed(2)}</span>
-            {Math.abs(unit.ceWeightSum - 1.0) >= 0.001 && ' (should equal 1.00)'}
+          <span className="weight-status muted" style={{ fontSize: 11.5 }}>
+            {weightedLinked.filter(l => l.tier === 'key').length} key · {weightedLinked.filter(l => l.tier !== 'key').length} supporting · Σ = <span className="num">{(unit.ceWeightSum || 0).toFixed(2)}</span>
           </span>
         </div>
       </div>
@@ -1597,8 +1640,8 @@ function DetailView({ state, update, unit, onBack, onAlpha, openControl, openIss
           <div className="card-title"><span className="accent-dot" /> 3 · Aggregate control effectiveness</div>
           <div className="calc">
             <span>CE</span><span className="eq">=</span>
-            {raw.linkedControls.map((lc, i) => (
-              <span key={i}><b>{lc.mitigationWeight.toFixed(2)}·{getCEFromMatrix(lc.DE, lc.OE).toFixed(1)}</b>{i < raw.linkedControls.length - 1 ? <span className="eq"> + </span> : null}</span>
+            {weightedLinked.map((lc, i) => (
+              <span key={i}><b>{round3(lc.weight).toFixed(3)}·{getCEFromMatrix(lc.DE, lc.OE).toFixed(1)}</b>{i < weightedLinked.length - 1 ? <span className="eq"> + </span> : null}</span>
             ))}
             <span className="eq">=</span>
             <span className="res num">{unit.ce.toFixed(2)}</span>
@@ -1793,7 +1836,7 @@ function RegisterView({ state, units, sort, onSort, filters, setFilters, onSelec
                   <td>
                     <div className="two-line">
                       <span className="top">{cat?.name || u.riskCategoryId}</span>
-                      <span className="bot">{u.riskCategoryId}</span>
+                      <span className="bot">{ruRefCode(u)}</span>
                     </div>
                   </td>
                   <td>{prod?.name || u.productId}</td>
@@ -2184,11 +2227,17 @@ function KpiCard({ label, value, sub, tone = 'accent', onClick }) {
   );
 }
 
-function MiniHeat({ title, units, axisLabel, getBand }) {
+function MiniHeat({ title, units, axisLabel, getBand, products: productList = [] }) {
   const irBands = ['Severe','High','Moderate','Low-Moderate','Low'];
-  const products = [...new Set(units.map(u => u.productId))];
+  const productIds = productList.length
+    ? productList.map(p => p.id).filter(pid => units.some(u => u.productId === pid))
+    : [...new Set(units.map(u => u.productId))];
+  const productName = (pid) => {
+    const p = productList.find(p => p.id === pid);
+    return p?.short || p?.name || pid;
+  };
   const grid = {};
-  irBands.forEach(b => { grid[b] = {}; products.forEach(p => { grid[b][p] = 0; }); });
+  irBands.forEach(b => { grid[b] = {}; productIds.forEach(pid => { grid[b][pid] = 0; }); });
   for (const u of units) {
     const b = getBand(u);
     if (!b || !grid[b]) continue;
@@ -2203,18 +2252,18 @@ function MiniHeat({ title, units, axisLabel, getBand }) {
           <thead>
             <tr>
               <th className="corner">{axisLabel}</th>
-              {products.map(p => <th key={p} className="axis-x">{p.replace('P-0','P')}</th>)}
+              {productIds.map(pid => <th key={pid} className="axis-x">{productName(pid)}</th>)}
             </tr>
           </thead>
           <tbody>
             {irBands.map(b => (
               <tr key={b}>
                 <th className="axis-y"><Chip band={b} /></th>
-                {products.map(p => {
-                  const n = grid[b][p] || 0;
+                {productIds.map(pid => {
+                  const n = grid[b][pid] || 0;
                   const cls = `lvl-${RR_BAND_CLASS[b]?.replace('r-', '') || ''}`;
                   return (
-                    <td key={p} className={`mini-cell ${n ? cls : 'mini-empty'}`}>
+                    <td key={pid} className={`mini-cell ${n ? cls : 'mini-empty'}`}>
                       <span className="num">{n || ''}</span>
                     </td>
                   );
@@ -2249,7 +2298,6 @@ function DashboardView({ state, units, goRegister, goTab, openUnit, openIssue, o
   }, [units]);
 
   const unassessed = units.filter(u => u.status === 'Draft' && (u.linkedControls || []).length === 0).length;
-  const wBadCount = units.filter(u => u.linkedControls.length > 0 && Math.abs(u.ceWeightSum - 1) >= 0.001).length;
 
   const ceBuckets = { 'Strong':0, 'Satisfactory':0, 'Needs Improvement':0, 'Weak':0, 'Unassessed':0 };
   for (const u of units) {
@@ -2266,10 +2314,6 @@ function DashboardView({ state, units, goRegister, goTab, openUnit, openIssue, o
     for (const u of units) {
       if (u.status === 'Draft' && (u.linkedControls || []).length === 0)
         out.push({ kind:'unit', id:u.id, label:`${u.id} · draft with no linked controls`, tone:'tag', click: () => openUnit(u.id) });
-    }
-    for (const u of units) {
-      if (u.linkedControls.length > 0 && Math.abs(u.ceWeightSum - 1) >= 0.001)
-        out.push({ kind:'unit', id:u.id, label:`${u.id} · Σ weights = ${u.ceWeightSum.toFixed(2)} (≠ 1.00)`, tone:'r-sev', click: () => openUnit(u.id) });
     }
     const usedControls = new Set(units.flatMap(u => u.linkedControls.map(l => l.controlId)));
     for (const c of state.controls) {
@@ -2291,7 +2335,7 @@ function DashboardView({ state, units, goRegister, goTab, openUnit, openIssue, o
     const items = [];
     for (const i of state.issues) for (const u of (i.updates || [])) items.push({ ...u, parent:`ISS · ${i.id}`, parentLabel: i.title, click: () => openIssue(i.id) });
     for (const a of state.actions) for (const u of (a.updates || [])) items.push({ ...u, parent:`ACT · ${a.id}`, parentLabel: a.title, click: () => openAction(a.id) });
-    for (const u of state.riskUnits) for (const up of (u.updates || [])) items.push({ ...up, parent:`RU · ${u.id}`, parentLabel: `${u.riskCategoryId} × ${state.products.find(p => p.id === u.productId)?.name || u.productId}`, click: () => openUnit(u.id) });
+    for (const u of state.riskUnits) for (const up of (u.updates || [])) items.push({ ...up, parent:`RU · ${u.id}`, parentLabel: `${ruRefCode(u)} · ${state.products.find(p => p.id === u.productId)?.name || u.productId}`, click: () => openUnit(u.id) });
     items.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     return items.slice(0, 8);
   }, [state.issues, state.actions, state.riskUnits, state.products]);
@@ -2310,12 +2354,11 @@ function DashboardView({ state, units, goRegister, goTab, openUnit, openIssue, o
         <KpiCard label="High / Severe residual"value={highSev.length} sub={`${highCount} high · ${sevCount} severe`}            tone="sev"    onClick={() => goRegister({ rrBand:'High' })} />
         <KpiCard label="Weak / Needs improv."  value={weakControlsCount.cnt} sub={`across ${weakControlsCount.ruIds} risk units`}      tone="high"   onClick={() => goTab('controls')} />
         <KpiCard label="Unassessed units"      value={unassessed}   sub="draft, no controls linked"                                 tone="tag"    onClick={() => goRegister({ unassessed: true })} />
-        <KpiCard label="Weight violations"     value={wBadCount}    sub="Σ weights ≠ 1.00"                                          tone="sev"    onClick={() => goRegister({ weightBad: true })} />
       </div>
 
       <div className="dash-grid">
-        <MiniHeat title="Inherent Risk by Product"  units={units} axisLabel="IR / Product" getBand={(u) => u.irBand} />
-        <MiniHeat title="Residual Risk by Product"  units={units} axisLabel="RR / Product" getBand={(u) => u.rrMatrixBand} />
+        <MiniHeat title="Inherent Risk by Product"  units={units} products={state.products} axisLabel="IR / Product" getBand={(u) => u.irBand} />
+        <MiniHeat title="Residual Risk by Product"  units={units} products={state.products} axisLabel="RR / Product" getBand={(u) => u.rrMatrixBand} />
       </div>
 
       <div className="card">
@@ -2662,7 +2705,7 @@ function IssueDetailView({ state, update, issueId, onBack, openUnit, openControl
           <LinkPicker
             value={issue.linkedRiskUnits || []}
             onChange={(v) => set({ linkedRiskUnits: v })}
-            options={state.riskUnits.map(u => ({ id: u.id, label: `${u.id} · ${u.riskCategoryId} × ${state.products.find(p => p.id === u.productId)?.name}` }))}
+            options={state.riskUnits.map(u => ({ id: u.id, label: `${u.id} · ${ruRefCode(u)} · ${state.products.find(p => p.id === u.productId)?.name}` }))}
             placeholder="Add risk unit"
             onClick={openUnit}
           />
@@ -2979,7 +3022,7 @@ function ActionDetailView({ state, update, actionId, onBack, openIssue, openUnit
           <LinkPicker
             value={action.linkedRiskUnitIds || []}
             onChange={(v) => set({ linkedRiskUnitIds: v })}
-            options={state.riskUnits.map(u => ({ id: u.id, label: `${u.id} · ${u.riskCategoryId} × ${state.products.find(p => p.id === u.productId)?.name}` }))}
+            options={state.riskUnits.map(u => ({ id: u.id, label: `${u.id} · ${ruRefCode(u)} · ${state.products.find(p => p.id === u.productId)?.name}` }))}
             placeholder="Add risk unit"
             onClick={openUnit}
           />
@@ -3070,10 +3113,11 @@ function ControlDetailView({ state, update, controlId, units, onBack, openUnit, 
   const usageRows = useMemo(() => {
     const out = [];
     for (const u of units) {
-      const lc = (u.linkedControls || []).find(x => x.controlId === ctrl.id);
-      if (!lc) continue;
-      const ceVal = getCEFromMatrix(lc.DE, lc.OE);
-      out.push({ u, lc, ce: ceVal, ceBand: getCEBand(ceVal) });
+      const weighted = computeControlWeights(u.linkedControls || []);
+      const lcw = weighted.find(x => x.controlId === ctrl.id);
+      if (!lcw) continue;
+      const ceVal = getCEFromMatrix(lcw.DE, lcw.OE);
+      out.push({ u, lc: lcw, weight: lcw.weight, ce: ceVal, ceBand: getCEBand(ceVal) });
     }
     return out;
   }, [units, ctrl.id]);
@@ -3150,7 +3194,7 @@ function ControlDetailView({ state, update, controlId, units, onBack, openUnit, 
           : (
             <table className="lc-table">
               <thead>
-                <tr><th>Risk unit</th><th>Weight</th><th>DE</th><th>OE</th><th>CE</th><th>Unit residual</th></tr>
+                <tr><th>Risk unit</th><th>Tier</th><th>Weight</th><th>DE</th><th>OE</th><th>CE</th><th>Unit residual</th></tr>
               </thead>
               <tbody>
                 {usageRows.map(r => (
@@ -3158,10 +3202,11 @@ function ControlDetailView({ state, update, controlId, units, onBack, openUnit, 
                     <td>
                       <div className="two-line">
                         <span className="top">{r.u.id}</span>
-                        <span className="bot">{r.u.riskCategoryId} · {state.products.find(p => p.id === r.u.productId)?.name}</span>
+                        <span className="bot">{ruRefCode(r.u)} · {state.products.find(p => p.id === r.u.productId)?.name}</span>
                       </div>
                     </td>
-                    <td className="num">{r.lc.mitigationWeight?.toFixed(2)}</td>
+                    <td className="muted">{r.lc.tier === 'key' ? 'Key' : 'Supporting'}</td>
+                    <td className="num">{round3(r.weight).toFixed(3)}</td>
                     <td className="num">{r.lc.DE}</td>
                     <td className="num">{r.lc.OE}</td>
                     <td><Chip kind="ce" band={r.ceBand} value={r.ce} /></td>
@@ -3308,7 +3353,7 @@ function ReportsView({ state, units, openUnit, openIssue, openAction, openContro
     const rows = units.map(u => {
       const narr = ['P','C','G','Ch'].every(k => (u.factorNarratives?.[k] || '').trim().length > 0);
       const links = u.linkedControls.length > 0;
-      const wOk = Math.abs(u.ceWeightSum - 1) < 0.001;
+      const wOk = u.linkedControls.length > 0;
       const status = u.status === 'Assessed';
       const score = [narr, links, wOk, status].filter(Boolean).length;
       return { u, narr, links, wOk, status, score };
@@ -3322,7 +3367,7 @@ function ReportsView({ state, units, openUnit, openIssue, openAction, openContro
             <tbody>
               {rows.map(({ u, narr, links, wOk, status, score }) => (
                 <tr key={u.id} className="click" onClick={() => openUnit(u.id)}>
-                  <td><div className="two-line"><span className="top">{u.id}</span><span className="bot">{u.riskCategoryId} · {state.products.find(p => p.id === u.productId)?.name}</span></div></td>
+                  <td><div className="two-line"><span className="top">{u.id}</span><span className="bot">{ruRefCode(u)} · {state.products.find(p => p.id === u.productId)?.name}</span></div></td>
                   <td>{narr ? <CheckChip on /> : <CheckChip />}</td>
                   <td>{links ? <CheckChip on /> : <CheckChip />}</td>
                   <td>{wOk ? <CheckChip on /> : <CheckChip />}</td>
@@ -3342,7 +3387,6 @@ function ReportsView({ state, units, openUnit, openIssue, openAction, openContro
     for (const u of units) {
       if (u.disagree) out.push({ id:u.id, label:`${u.id} · matrix/formula disagree by >1 band`, click:() => openUnit(u.id) });
       if (u.ceCapped) out.push({ id:u.id, label:`${u.id} · weak-critical-control cap applied (raw=${u.ceRaw?.toFixed(2)})`, click:() => openUnit(u.id) });
-      if (Math.abs(u.ceWeightSum - 1) >= 0.001 && u.linkedControls.length > 0) out.push({ id:u.id, label:`${u.id} · Σ weights = ${u.ceWeightSum.toFixed(2)}`, click:() => openUnit(u.id) });
     }
     return (
       <>

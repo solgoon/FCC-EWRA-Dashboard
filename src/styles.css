@@ -332,6 +332,13 @@ td.muted { color: var(--muted); }
 .rubric-driver ol li b { font-family: var(--mono); color: var(--accent); font-weight: 600; }
 .rubric-driver ol li span { color: var(--text); }
 .factor-narr { width: 100%; margin-top: 10px; min-height: 56px; }
+.factor-ticks {
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 10px;
+  color: var(--muted-2);
+  margin-top: 2px; padding: 0 4px;
+}
+.lc-table .col-tier { width: 130px; }
 
 /* Calc strip */
 .calc {
